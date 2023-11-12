@@ -1,3 +1,3 @@
-module opengemini-client-go
+module github.com/openGemini/opengemini-client-go
 
 go 1.19
