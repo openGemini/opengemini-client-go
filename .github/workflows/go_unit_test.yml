@@ -9,12 +9,14 @@ on:
       - main
 
 jobs:
-  build:
+  go_unit_test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
         with:
           go-version: '1.21'
+      - name: setup OpenGemini
+        uses: shoothzj/setup-opengemini-action@main
       - name: Run coverage
         run: go test ./... -coverpkg=./padmin/... -race -coverprofile=coverage.out -covermode=atomic
