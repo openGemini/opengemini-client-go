@@ -10,6 +10,7 @@ const (
 )
 
 type Client interface {
+	Ping(idx int) error
 }
 
 type Config struct {
@@ -17,6 +18,7 @@ type Config struct {
 	AuthConfig  *AuthConfig
 	BatchConfig *BatchConfig
 	GzipEnabled bool
+	TlsEnabled  bool
 	TlsConfig   *tls.Config
 }
 
@@ -35,7 +37,6 @@ type AuthConfig struct {
 }
 
 type BatchConfig struct {
-	BatchEnabled  bool
 	BatchInterval int
 	BatchSize     int
 }
