@@ -2,7 +2,8 @@ package opengemini
 
 import "net/http"
 
-func (c client) Ping(idx int) error {
+// Ping check that status of cluster.
+func (c *client) Ping(idx int) error {
 	serverUrl := c.serverUrls[idx]
 	resp, err := c.cli.Get(serverUrl + UrlPing)
 	if err != nil {
