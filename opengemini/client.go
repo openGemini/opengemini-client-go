@@ -19,9 +19,9 @@ type Client interface {
 
 // Config is used to construct a openGemini Client instance.
 type Config struct {
-	// AddressList Configure the service URL for the openGemini service.
+	// Addresses Configure the service URL for the openGemini service.
 	// This parameter is required.
-	AddressList []*Address
+	Addresses []*Address
 	// AuthConfig configuration information for authentication.
 	AuthConfig *AuthConfig
 	// BatchConfig configuration information for batch processing.

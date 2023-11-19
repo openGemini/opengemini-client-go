@@ -13,7 +13,7 @@ type client struct {
 }
 
 func newClient(c *Config) (Client, error) {
-	if len(c.AddressList) == 0 {
+	if len(c.Addresses) == 0 {
 		return nil, errors.New("must have at least one address")
 	}
 	if c.AuthConfig != nil {
@@ -39,7 +39,7 @@ func newClient(c *Config) (Client, error) {
 	}
 	client := &client{
 		config:     c,
-		serverUrls: buildServerUrls(c.AddressList, c.TlsEnabled),
+		serverUrls: buildServerUrls(c.Addresses, c.TlsEnabled),
 		cli:        newHttpClient(*c),
 	}
 	return client, nil
