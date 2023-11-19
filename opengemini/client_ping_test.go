@@ -7,7 +7,7 @@ import (
 
 func TestPingSuccess(t *testing.T) {
 	c := testNewClient(t, &Config{
-		AddressList: []*Address{{
+		Addresses: []*Address{{
 			Host: "localhost",
 			Port: 8086,
 		}},
@@ -19,7 +19,7 @@ func TestPingSuccess(t *testing.T) {
 
 func TestPingFail(t *testing.T) {
 	c := testNewClient(t, &Config{
-		AddressList: []*Address{{
+		Addresses: []*Address{{
 			Host: "localhost",
 			Port: 8086,
 		}, {
