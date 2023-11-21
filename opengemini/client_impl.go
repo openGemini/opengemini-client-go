@@ -2,14 +2,13 @@ package opengemini
 
 import (
 	"errors"
-	"net/http"
 	"strconv"
 )
 
 type client struct {
 	config     *Config
 	serverUrls []string
-	cli        *http.Client
+	request    *requestBuilder
 }
 
 func newClient(c *Config) (Client, error) {
@@ -40,7 +39,7 @@ func newClient(c *Config) (Client, error) {
 	client := &client{
 		config:     c,
 		serverUrls: buildServerUrls(c.Addresses, c.TlsEnabled),
-		cli:        newHttpClient(*c),
+		request:    newRequestBuilder(*c),
 	}
 	return client, nil
 }
@@ -55,16 +54,4 @@ func buildServerUrls(addresses []*Address, tlsEnabled bool) []string {
 		urls[i] = protocol + addr.Host + ":" + strconv.Itoa(addr.Port)
 	}
 	return urls
-}
-
-func newHttpClient(config Config) *http.Client {
-	if config.TlsEnabled {
-		return &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: config.TlsConfig,
-			},
-		}
-	} else {
-		return &http.Client{}
-	}
 }

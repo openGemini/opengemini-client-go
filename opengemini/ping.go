@@ -4,7 +4,7 @@ import "net/http"
 
 // Ping check that status of cluster.
 func (c *client) Ping(idx int) error {
-	resp, err := c.executeHttpGetByIdx(idx, UrlPing, requestDetails{})
+	resp, err := c.request.getInstance().setMethod(http.MethodGet).setURL(c.serverUrls[idx], UrlPing).do()
 	if err != nil {
 		return err
 	}

@@ -69,5 +69,5 @@ func (c *client) executeHttpRequest(method, serverUrl, urlPath string, details r
 		}
 	}
 
-	return c.cli.Do(req)
+	return c.request.Do(req)
 }
