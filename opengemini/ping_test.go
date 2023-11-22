@@ -17,7 +17,7 @@ func TestPingSuccess(t *testing.T) {
 	require.Nil(t, err)
 }
 
-func TestPingFail(t *testing.T) {
+func TestPingFailForInaccessibleAddress(t *testing.T) {
 	c := testNewClient(t, &Config{
 		Addresses: []*Address{{
 			Host: "localhost",
@@ -29,5 +29,19 @@ func TestPingFail(t *testing.T) {
 	})
 
 	err := c.Ping(1)
+	require.NotNil(t, err)
+}
+
+func TestPingFailForOutOfRangeIndex(t *testing.T) {
+	c := testNewClient(t, &Config{
+		Addresses: []*Address{{
+			Host: "localhost",
+			Port: 8086,
+		}},
+	})
+
+	err := c.Ping(1)
+	require.NotNil(t, err)
+	err = c.Ping(-1)
 	require.NotNil(t, err)
 }
