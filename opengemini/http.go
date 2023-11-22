@@ -2,6 +2,7 @@ package opengemini
 
 import (
 	"encoding/base64"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -42,6 +43,9 @@ func (c *client) executeHttpGetByIdx(idx int, urlPath string, details requestDet
 }
 
 func (c *client) executeHttpRequestByIdx(idx int, method, urlPath string, details requestDetails) (*http.Response, error) {
+	if idx >= len(c.serverUrls) || idx < 0 {
+		return nil, errors.New("index out of range")
+	}
 	serverUrl := c.serverUrls[idx]
 	return c.executeHttpRequest(method, serverUrl, urlPath, details)
 }
