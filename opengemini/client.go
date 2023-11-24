@@ -15,6 +15,7 @@ const (
 type Client interface {
 	// Ping check that status of cluster.
 	Ping(idx int) error
+	Query(query Query) (*QueryResult, error)
 }
 
 // Config is used to construct a openGemini Client instance.

@@ -50,6 +50,10 @@ func (c *client) executeHttpRequestByIdx(idx int, method, urlPath string, detail
 	return c.executeHttpRequestInner(method, serverUrl, urlPath, details)
 }
 
+func (c *client) executeHttpGet(urlPath string, details requestDetails) (*http.Response, error) {
+	return c.executeHttpRequest(http.MethodGet, urlPath, details)
+}
+
 func (c *client) executeHttpRequest(method, urlPath string, details requestDetails) (*http.Response, error) {
 	idx := int(c.currentIdx.Add(1)) % len(c.serverUrls)
 	return c.executeHttpRequestInner(method, c.serverUrls[idx], urlPath, details)
