@@ -47,10 +47,15 @@ func (c *client) executeHttpRequestByIdx(idx int, method, urlPath string, detail
 		return nil, errors.New("index out of range")
 	}
 	serverUrl := c.serverUrls[idx]
-	return c.executeHttpRequest(method, serverUrl, urlPath, details)
+	return c.executeHttpRequestInner(method, serverUrl, urlPath, details)
 }
 
-func (c *client) executeHttpRequest(method, serverUrl, urlPath string, details requestDetails) (*http.Response, error) {
+func (c *client) executeHttpRequest(method, urlPath string, details requestDetails) (*http.Response, error) {
+	idx := int(c.currentIdx.Add(1)) % len(c.serverUrls)
+	return c.executeHttpRequestInner(method, c.serverUrls[idx], urlPath, details)
+}
+
+func (c *client) executeHttpRequestInner(method, serverUrl, urlPath string, details requestDetails) (*http.Response, error) {
 	details.header = c.updateAuthHeader(method, urlPath, details.header)
 	fullUrl := serverUrl + urlPath
 	u, err := url.Parse(fullUrl)
