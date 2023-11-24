@@ -4,12 +4,14 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"sync/atomic"
 )
 
 type client struct {
 	config     *Config
 	serverUrls []string
 	cli        *http.Client
+	currentIdx atomic.Int32
 }
 
 func newClient(c *Config) (Client, error) {
