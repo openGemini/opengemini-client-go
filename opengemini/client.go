@@ -16,6 +16,19 @@ type Client interface {
 	// Ping check that status of cluster.
 	Ping(idx int) error
 	Query(query Query) (*QueryResult, error)
+	// CreateDatabase Create database
+	CreateDatabase(database string) error
+	// CreateDatabaseWithRp Create database with retention policy
+	// rpConfig configuration information for retention policy
+	CreateDatabaseWithRp(database string, rpConfig RpConfig) error
+	ShowDatabase() ([]string, error)
+	DropDatabase(database string) error
+	// CreateRetentionPolicy
+	// rpConfig configuration information for retention policy
+	// isDefault can set the new retention policy as the default retention policy for the database
+	CreateRetentionPolicy(database string, rpConfig RpConfig, isDefault bool) error
+	ShowRetentionPolicy(database string) ([]RetentionPolicy, error)
+	DropRetentionPolicy(retentionPolicy string, database string) error
 }
 
 // Config is used to construct a openGemini Client instance.
@@ -64,6 +77,18 @@ type BatchConfig struct {
 	BatchInterval int
 	// BatchSize batch size that triggers batch processing.
 	BatchSize int
+}
+
+// RpConfig represents the configuration information for retention policy
+type RpConfig struct {
+	// Name retention policy name
+	Name string
+	// Duration indicates how long the data will be retained
+	Duration string
+	// ShardGroupDuration determine the time range for sharding groups
+	ShardGroupDuration string
+	// IndexDuration determines the time range of the index group
+	IndexDuration string
 }
 
 // NewClient Creates a openGemini client instance
