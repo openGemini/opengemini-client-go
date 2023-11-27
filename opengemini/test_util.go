@@ -11,3 +11,7 @@ func testNewClient(t *testing.T, config *Config) Client {
 	require.NotNil(t, client)
 	return client
 }
+
+func randomDatabaseName() string {
+	return RandStr(8)
+}
