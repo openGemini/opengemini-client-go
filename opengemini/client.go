@@ -2,6 +2,7 @@ package opengemini
 
 import (
 	"crypto/tls"
+	"time"
 )
 
 const (
@@ -40,6 +41,10 @@ type Config struct {
 	AuthConfig *AuthConfig
 	// BatchConfig configuration information for batch processing.
 	BatchConfig *BatchConfig
+	// Timeout default 30s
+	Timeout time.Duration
+	// ConnectTimeout default 10s
+	ConnectTimeout time.Duration
 	// GzipEnabled determines whether to use gzip for data transmission.
 	GzipEnabled bool
 	// TlsEnabled determines whether to use TLS for data transmission.
