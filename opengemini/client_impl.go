@@ -2,9 +2,11 @@ package opengemini
 
 import (
 	"errors"
+	"net"
 	"net/http"
 	"strconv"
 	"sync/atomic"
+	"time"
 )
 
 type client struct {
@@ -39,6 +41,12 @@ func newClient(c *Config) (Client, error) {
 			return nil, errors.New("batch enabled, batch size must be great than 0")
 		}
 	}
+	if c.Timeout <= 0 {
+		c.Timeout = 30 * time.Second
+	}
+	if c.ConnectTimeout <= 0 {
+		c.ConnectTimeout = 10 * time.Second
+	}
 	client := &client{
 		config:     c,
 		serverUrls: buildServerUrls(c.Addresses, c.TlsEnabled),
@@ -62,11 +70,22 @@ func buildServerUrls(addresses []*Address, tlsEnabled bool) []string {
 func newHttpClient(config Config) *http.Client {
 	if config.TlsEnabled {
 		return &http.Client{
+			Timeout: config.Timeout,
 			Transport: &http.Transport{
+				DialContext: (&net.Dialer{
+					Timeout: config.ConnectTimeout,
+				}).DialContext,
 				TLSClientConfig: config.TlsConfig,
 			},
 		}
 	} else {
-		return &http.Client{}
+		return &http.Client{
+			Timeout: config.Timeout,
+			Transport: &http.Transport{
+				DialContext: (&net.Dialer{
+					Timeout: config.ConnectTimeout,
+				}).DialContext,
+			},
+		}
 	}
 }
