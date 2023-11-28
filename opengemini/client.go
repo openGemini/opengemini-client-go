@@ -29,7 +29,7 @@ type Client interface {
 	// isDefault can set the new retention policy as the default retention policy for the database
 	CreateRetentionPolicy(database string, rpConfig RpConfig, isDefault bool) error
 	ShowRetentionPolicy(database string) ([]RetentionPolicy, error)
-	DropRetentionPolicy(retentionPolicy string, database string) error
+	DropRetentionPolicy(database, retentionPolicy string) error
 }
 
 // Config is used to construct a openGemini Client instance.

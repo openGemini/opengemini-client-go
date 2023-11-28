@@ -5,14 +5,17 @@ import (
 	"testing"
 )
 
-func TestClientCreateDatabase(t *testing.T) {
+func TestClientCreateDatabaseSuccess(t *testing.T) {
 	c := testNewClient(t, &Config{
 		Addresses: []*Address{{
 			Host: "localhost",
 			Port: 8086,
 		}},
 	})
-	err := c.CreateDatabase("test4_database")
+	databaseName := randomDatabaseName()
+	err := c.CreateDatabase(databaseName)
+	require.Nil(t, err)
+	err = c.DropDatabase(databaseName)
 	require.Nil(t, err)
 }
 
@@ -27,14 +30,17 @@ func TestClientCreateDatabaseEmptyDatabase(t *testing.T) {
 	require.NotNil(t, err)
 }
 
-func TestClientCreateDatabaseWithRp(t *testing.T) {
+func TestClientCreateDatabaseWithRpSuccess(t *testing.T) {
 	c := testNewClient(t, &Config{
 		Addresses: []*Address{{
 			Host: "localhost",
 			Port: 8086,
 		}},
 	})
-	err := c.CreateDatabaseWithRp("test4_database", RpConfig{Name: "test4", Duration: "1d", ShardGroupDuration: "1h", IndexDuration: "7h"})
+	databaseName := randomDatabaseName()
+	err := c.CreateDatabaseWithRp(databaseName, RpConfig{Name: "test4", Duration: "1d", ShardGroupDuration: "1h", IndexDuration: "7h"})
+	require.Nil(t, err)
+	err = c.DropDatabase(databaseName)
 	require.Nil(t, err)
 }
 
@@ -45,7 +51,8 @@ func TestClientCreateDatabaseWithRpInvalid(t *testing.T) {
 			Port: 8086,
 		}},
 	})
-	err := c.CreateDatabaseWithRp("test4_database", RpConfig{Name: "test4", Duration: "1", ShardGroupDuration: "1h", IndexDuration: "7h"})
+	databaseName := randomDatabaseName()
+	err := c.CreateDatabaseWithRp(databaseName, RpConfig{Name: "test4", Duration: "1", ShardGroupDuration: "1h", IndexDuration: "7h"})
 	require.NotNil(t, err)
 }
 
@@ -78,7 +85,8 @@ func TestClientDropDatabase(t *testing.T) {
 			Port: 8086,
 		}},
 	})
-	err := c.DropDatabase("vvv_database")
+	databaseName := randomDatabaseName()
+	err := c.DropDatabase(databaseName)
 	require.Nil(t, err)
 }
 

@@ -128,15 +128,15 @@ func convertRetentionPolicy(queryResult *QueryResult) []RetentionPolicy {
 }
 
 // DropRetentionPolicy Drop retention policy
-func (c *client) DropRetentionPolicy(rp string, database string) error {
-	if len(rp) == 0 {
+func (c *client) DropRetentionPolicy(database, retentionPolicy string) error {
+	if len(retentionPolicy) == 0 {
 		return errors.New("empty retention policy")
 	}
 	if len(database) == 0 {
 		return errors.New("empty database name")
 	}
 
-	cmd := fmt.Sprintf("DROP RETENTION POLICY %s ON %s", rp, database)
+	cmd := fmt.Sprintf("DROP RETENTION POLICY %s ON %s", retentionPolicy, database)
 	queryResult, err := c.queryPost(Query{Command: cmd})
 	if err != nil {
 		return err
