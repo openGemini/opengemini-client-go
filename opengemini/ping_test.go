@@ -6,12 +6,7 @@ import (
 )
 
 func TestPingSuccess(t *testing.T) {
-	c := testNewClient(t, &Config{
-		Addresses: []*Address{{
-			Host: "localhost",
-			Port: 8086,
-		}},
-	})
+	c := testDefaultClient(t)
 
 	err := c.Ping(0)
 	require.Nil(t, err)
@@ -33,12 +28,7 @@ func TestPingFailForInaccessibleAddress(t *testing.T) {
 }
 
 func TestPingFailForOutOfRangeIndex(t *testing.T) {
-	c := testNewClient(t, &Config{
-		Addresses: []*Address{{
-			Host: "localhost",
-			Port: 8086,
-		}},
-	})
+	c := testDefaultClient(t)
 
 	err := c.Ping(1)
 	require.NotNil(t, err)
