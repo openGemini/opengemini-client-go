@@ -6,12 +6,7 @@ import (
 )
 
 func TestClientCreateRetentionPolicy(t *testing.T) {
-	c := testNewClient(t, &Config{
-		Addresses: []*Address{{
-			Host: "localhost",
-			Port: 8086,
-		}},
-	})
+	c := testDefaultClient(t)
 	databaseName := randomDatabaseName()
 	err := c.CreateDatabase(databaseName)
 	require.Nil(t, err)
@@ -36,12 +31,7 @@ func TestClientCreateRetentionPolicy(t *testing.T) {
 }
 
 func TestClientCreateRetentionPolicyNotExistDatabase(t *testing.T) {
-	c := testNewClient(t, &Config{
-		Addresses: []*Address{{
-			Host: "localhost",
-			Port: 8086,
-		}},
-	})
+	c := testDefaultClient(t)
 	databaseName := randomDatabaseName()
 	err := c.CreateRetentionPolicy(databaseName, RpConfig{Name: "test_rp1", Duration: "3d"}, false)
 	require.NotNil(t, err)
@@ -50,34 +40,19 @@ func TestClientCreateRetentionPolicyNotExistDatabase(t *testing.T) {
 }
 
 func TestClientCreateRetentionPolicyEmptyDatabase(t *testing.T) {
-	c := testNewClient(t, &Config{
-		Addresses: []*Address{{
-			Host: "localhost",
-			Port: 8086,
-		}},
-	})
+	c := testDefaultClient(t)
 	err := c.CreateRetentionPolicy("", RpConfig{Name: "test_rp1", Duration: "3d"}, false)
 	require.NotNil(t, err)
 }
 
 func TestClientDropRetentionPolicy(t *testing.T) {
-	c := testNewClient(t, &Config{
-		Addresses: []*Address{{
-			Host: "localhost",
-			Port: 8086,
-		}},
-	})
+	c := testDefaultClient(t)
 	err := c.DropRetentionPolicy("test_rp1", "test_database")
 	require.Nil(t, err)
 }
 
 func TestClientShowRetentionPolicy(t *testing.T) {
-	c := testNewClient(t, &Config{
-		Addresses: []*Address{{
-			Host: "localhost",
-			Port: 8086,
-		}},
-	})
+	c := testDefaultClient(t)
 	databaseName := randomDatabaseName()
 	err := c.CreateDatabase(databaseName)
 	require.Nil(t, err)
