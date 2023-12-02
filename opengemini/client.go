@@ -17,6 +17,7 @@ type Client interface {
 	// Ping check that status of cluster.
 	Ping(idx int) error
 	Query(query Query) (*QueryResult, error)
+
 	// CreateDatabase Create database
 	CreateDatabase(database string) error
 	// CreateDatabaseWithRp Create database with retention policy
@@ -24,12 +25,20 @@ type Client interface {
 	CreateDatabaseWithRp(database string, rpConfig RpConfig) error
 	ShowDatabase() ([]string, error)
 	DropDatabase(database string) error
+
 	// CreateRetentionPolicy
 	// rpConfig configuration information for retention policy
 	// isDefault can set the new retention policy as the default retention policy for the database
 	CreateRetentionPolicy(database string, rpConfig RpConfig, isDefault bool) error
 	ShowRetentionPolicy(database string) ([]RetentionPolicy, error)
 	DropRetentionPolicy(database, retentionPolicy string) error
+
+	ShowTagKeys(database, command string) ([]ValuesResult, error)
+	ShowTagValues(database, command string) ([]ValuesResult, error)
+	ShowFieldKeys(database, command string) ([]ValuesResult, error)
+	// ShowSeries returns the series of specified databases
+	// return [measurement1,tag1=value1 measurement2,tag2=value2]
+	ShowSeries(database, command string) ([]string, error)
 }
 
 // Config is used to construct a openGemini Client instance.
