@@ -13,7 +13,7 @@ type client struct {
 	config     *Config
 	serverUrls []string
 	cli        *http.Client
-	currentIdx atomic.Int32
+	prevIdx    atomic.Int32
 }
 
 func newClient(c *Config) (Client, error) {
@@ -52,6 +52,7 @@ func newClient(c *Config) (Client, error) {
 		serverUrls: buildServerUrls(c.Addresses, c.TlsEnabled),
 		cli:        newHttpClient(*c),
 	}
+	client.prevIdx.Store(-1)
 	return client, nil
 }
 
