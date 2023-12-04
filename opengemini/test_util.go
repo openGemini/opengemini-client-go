@@ -24,3 +24,11 @@ func testNewClient(t *testing.T, config *Config) Client {
 func randomDatabaseName() string {
 	return RandStr(8)
 }
+
+func randomRetentionPolicy() string {
+	return RandStr(8)
+}
+
+func randomMeasurement() string {
+	return RandStr(8)
+}
