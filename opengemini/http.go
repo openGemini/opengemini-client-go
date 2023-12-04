@@ -59,7 +59,7 @@ func (c *client) executeHttpPost(urlPath string, details requestDetails) (*http.
 }
 
 func (c *client) executeHttpRequest(method, urlPath string, details requestDetails) (*http.Response, error) {
-	idx := int(c.currentIdx.Add(1)) % len(c.serverUrls)
+	idx := int(c.prevIdx.Add(1)) % len(c.serverUrls)
 	return c.executeHttpRequestInner(method, c.serverUrls[idx], urlPath, details)
 }
 
