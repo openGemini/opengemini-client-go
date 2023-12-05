@@ -6,6 +6,7 @@ const (
 	UrlPing   = "/ping"
 	UrlQuery  = "/query"
 	UrlStatus = "/status"
+	UrlWrite  = "/write"
 )
 
 var noAuthRequired = map[string]map[string]struct{}{
