@@ -18,6 +18,8 @@ type Client interface {
 	Ping(idx int) error
 	Query(query Query) (*QueryResult, error)
 
+	// WriteBatchPoints batch points to assigned database
+	WriteBatchPoints(database string, bp *BatchPoints) error
 	// CreateDatabase Create database
 	CreateDatabase(database string) error
 	// CreateDatabaseWithRp Create database with retention policy
