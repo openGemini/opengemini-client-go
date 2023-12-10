@@ -46,8 +46,7 @@ func (c *client) executeHttpRequestByIdx(idx int, method, urlPath string, detail
 	if idx >= len(c.serverUrls) || idx < 0 {
 		return nil, errors.New("index out of range")
 	}
-	serverUrl := c.serverUrls[idx]
-	return c.executeHttpRequestInner(method, serverUrl, urlPath, details)
+	return c.executeHttpRequestInner(method, c.serverUrls[idx].url, urlPath, details)
 }
 
 func (c *client) executeHttpGet(urlPath string, details requestDetails) (*http.Response, error) {
@@ -59,8 +58,11 @@ func (c *client) executeHttpPost(urlPath string, details requestDetails) (*http.
 }
 
 func (c *client) executeHttpRequest(method, urlPath string, details requestDetails) (*http.Response, error) {
-	idx := int(c.prevIdx.Add(1)) % len(c.serverUrls)
-	return c.executeHttpRequestInner(method, c.serverUrls[idx], urlPath, details)
+	serverUrl, err := c.getServerUrl()
+	if err != nil {
+		return nil, err
+	}
+	return c.executeHttpRequestInner(method, serverUrl, urlPath, details)
 }
 
 func (c *client) executeHttpRequestInner(method, serverUrl, urlPath string, details requestDetails) (*http.Response, error) {
