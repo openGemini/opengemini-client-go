@@ -8,23 +8,13 @@ import (
 
 var allServersDown = errors.New("all servers down")
 
+const (
+	healthCheckPeriod = time.Second * 10
+)
+
 func (c *client) serversCheck() {
-	var t *time.Timer
+	var t = time.NewTimer(healthCheckPeriod)
 	for {
-		select {
-		case <-c.ctx.Done():
-			return
-		default:
-		}
-
-		func() {
-			defer func() {
-				recover()
-			}()
-			c.checkUpOrDown()
-		}()
-
-		t = time.NewTimer(time.Second * 10)
 		select {
 		case <-c.ctx.Done():
 			if !t.Stop() {
@@ -33,6 +23,10 @@ func (c *client) serversCheck() {
 			return
 		case <-t.C:
 		}
+
+		c.checkUpOrDown()
+
+		t = time.NewTimer(healthCheckPeriod)
 	}
 }
 
@@ -43,7 +37,9 @@ func (c *client) checkUpOrDown() {
 		go func(idx int) {
 			defer func() {
 				wg.Done()
-				recover()
+				if err := recover(); err != nil {
+					return
+				}
 			}()
 			c.serverUrls[idx].isDown = false
 			if err := c.Ping(idx); err != nil {
