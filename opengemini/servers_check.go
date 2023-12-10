@@ -19,8 +19,7 @@ func (c *client) serversCheck() {
 
 		func() {
 			defer func() {
-				if r := recover(); r != nil {
-				}
+				recover()
 			}()
 			c.checkUpOrDown()
 		}()
@@ -44,8 +43,7 @@ func (c *client) checkUpOrDown() {
 		go func(idx int) {
 			defer func() {
 				wg.Done()
-				if r := recover(); r != nil {
-				}
+				recover()
 			}()
 			c.serverUrls[idx].isDown = false
 			if err := c.Ping(idx); err != nil {

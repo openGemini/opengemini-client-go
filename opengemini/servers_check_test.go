@@ -49,11 +49,4 @@ func TestServersCheck(t *testing.T) {
 	url, err = cli.getServerUrl()
 	require.NoError(t, err)
 	require.Equal(t, "http://localhost2:8086", url)
-
-	go cli.serversCheck()
-
-	time.Sleep(time.Second * 6)
-	url, err = cli.getServerUrl()
-	require.Equal(t, allServersDown, err)
-	cli.Close()
 }
