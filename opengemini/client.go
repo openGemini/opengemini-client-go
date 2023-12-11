@@ -18,7 +18,9 @@ type Client interface {
 	Ping(idx int) error
 	Query(query Query) (*QueryResult, error)
 
-	// WriteBatchPoints batch points to assigned database
+	// WritePoint write single point to assigned database
+	WritePoint(database string, point *Point, callbackFunc func(error)) error
+	// WriteBatchPoints write batch points to assigned database
 	WriteBatchPoints(database string, bp *BatchPoints) error
 	// CreateDatabase Create database
 	CreateDatabase(database string) error
