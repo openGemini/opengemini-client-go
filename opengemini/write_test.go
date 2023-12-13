@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestClient_Write(t *testing.T) {
+func TestClientWriteBatchPoints(t *testing.T) {
 	c := testDefaultClient(t)
 
 	// create a test database with rand suffix
@@ -59,4 +59,29 @@ func TestClient_Write(t *testing.T) {
 	result, err := c.Query(q)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(result.Results[0].Series[0].Values))
+}
+
+func TestClientWritePoint(t *testing.T) {
+	c := testDefaultClient(t)
+
+	// create a test database with rand suffix
+	database := randomDatabaseName()
+	err := c.CreateDatabase(database)
+	assert.Nil(t, err)
+
+	// delete test database before exit test case
+	defer func() {
+		err := c.DropDatabase(database)
+		assert.Nil(t, err)
+	}()
+
+	callback := func(err error) {
+		assert.Nil(t, err)
+	}
+	point := &Point{}
+	point.Measurement = randomMeasurement()
+	point.AddTag("tag", "test")
+	point.AddField("field", "test")
+	err = c.WritePoint(database, point, callback)
+	assert.Nil(t, err)
 }
