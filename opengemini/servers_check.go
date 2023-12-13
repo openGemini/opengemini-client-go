@@ -37,10 +37,8 @@ func (c *client) checkUpOrDown() {
 					return
 				}
 			}()
-			c.endpoints[idx].isDown = false
-			if err := c.Ping(idx); err != nil {
-				c.endpoints[idx].isDown = true
-			}
+			err := c.Ping(idx)
+			c.endpoints[idx].isDown = err != nil
 		}(i)
 	}
 	wg.Wait()
