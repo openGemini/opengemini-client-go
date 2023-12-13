@@ -38,7 +38,7 @@ func (c *client) checkUpOrDown() {
 				}
 			}()
 			err := c.Ping(idx)
-			c.endpoints[idx].isDown = err != nil
+			c.endpoints[idx].isDown.Store(err != nil)
 		}(i)
 	}
 	wg.Wait()
@@ -49,7 +49,7 @@ func (c *client) getServerUrl() (string, error) {
 	serverLen := len(c.endpoints)
 	for i := serverLen; i > 0; i-- {
 		idx := uint32(c.prevIdx.Add(1)) % uint32(serverLen)
-		if c.endpoints[idx].isDown {
+		if c.endpoints[idx].isDown.Load() {
 			continue
 		}
 		return c.endpoints[idx].url, nil

@@ -12,7 +12,7 @@ import (
 
 type endpoint struct {
 	url    string
-	isDown bool
+	isDown atomic.Bool
 }
 
 type client struct {
