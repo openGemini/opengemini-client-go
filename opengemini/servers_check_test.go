@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -45,11 +46,11 @@ func TestServerCheck(t *testing.T) {
 	assert.NoError(t, err)
 	port2, server2, err := startServer()
 	assert.NoError(t, err)
-	cli := client{
+	cli := &client{
 		config: &Config{},
 		endpoints: []endpoint{
-			{url: fmt.Sprintf("http://localhost:%d", port1)},
-			{url: fmt.Sprintf("http://localhost:%d", port2)},
+			{url: "http://localhost:" + strconv.Itoa(port1)},
+			{url: "http://localhost:" + strconv.Itoa(port2)},
 		},
 		cli: &http.Client{
 			Transport: &http.Transport{
