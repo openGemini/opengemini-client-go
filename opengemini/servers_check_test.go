@@ -20,7 +20,7 @@ func setHandleFunc() {
 }
 
 func startServer() (int, *http.Server, error) {
-	ln, err := net.Listen("tcp", fmt.Sprintf(":0"))
+	ln, err := net.Listen("tcp", ":0")
 	if err != nil {
 		return 0, nil, err
 	}
