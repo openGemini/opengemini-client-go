@@ -42,6 +42,7 @@ type Client interface {
 	// return [measurement1,tag1=value1 measurement2,tag2=value2]
 	ShowSeries(database, command string) ([]string, error)
 
+	// Close shut down resources, such as health check tasks
 	Close() error
 }
 

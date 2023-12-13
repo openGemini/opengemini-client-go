@@ -10,16 +10,16 @@ import (
 	"time"
 )
 
-type serverUrl struct {
+type endpoint struct {
 	url    string
 	isDown bool
 }
 
 type client struct {
-	config     *Config
-	serverUrls []serverUrl
-	cli        *http.Client
-	prevIdx    atomic.Int32
+	config    *Config
+	endpoints []endpoint
+	cli       *http.Client
+	prevIdx   atomic.Int32
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -58,14 +58,14 @@ func newClient(c *Config) (Client, error) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	client := &client{
-		config:     c,
-		serverUrls: buildServerUrls(c.Addresses, c.TlsEnabled),
-		cli:        newHttpClient(*c),
-		ctx:        ctx,
-		cancel:     cancel,
+		config:    c,
+		endpoints: buildEndpoints(c.Addresses, c.TlsEnabled),
+		cli:       newHttpClient(*c),
+		ctx:       ctx,
+		cancel:    cancel,
 	}
 	client.prevIdx.Store(-1)
-	go client.serversCheck()
+	go client.endpointsCheck()
 	return client, nil
 }
 
@@ -74,14 +74,14 @@ func (c *client) Close() error {
 	return nil
 }
 
-func buildServerUrls(addresses []*Address, tlsEnabled bool) []serverUrl {
-	urls := make([]serverUrl, len(addresses))
+func buildEndpoints(addresses []*Address, tlsEnabled bool) []endpoint {
+	urls := make([]endpoint, len(addresses))
 	protocol := "http://"
 	if tlsEnabled {
 		protocol = "https://"
 	}
 	for i, addr := range addresses {
-		urls[i] = serverUrl{url: protocol + addr.Host + ":" + strconv.Itoa(addr.Port)}
+		urls[i] = endpoint{url: protocol + addr.Host + ":" + strconv.Itoa(addr.Port)}
 	}
 	return urls
 }
