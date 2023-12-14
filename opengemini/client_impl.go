@@ -1,6 +1,7 @@
 package opengemini
 
 import (
+	"context"
 	"errors"
 	"net"
 	"net/http"
@@ -9,11 +10,19 @@ import (
 	"time"
 )
 
+type endpoint struct {
+	url    string
+	isDown atomic.Bool
+}
+
 type client struct {
-	config     *Config
-	serverUrls []string
-	cli        *http.Client
-	prevIdx    atomic.Int32
+	config    *Config
+	endpoints []endpoint
+	cli       *http.Client
+	prevIdx   atomic.Int32
+
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 func newClient(c *Config) (Client, error) {
@@ -47,23 +56,32 @@ func newClient(c *Config) (Client, error) {
 	if c.ConnectTimeout <= 0 {
 		c.ConnectTimeout = 10 * time.Second
 	}
+	ctx, cancel := context.WithCancel(context.Background())
 	client := &client{
-		config:     c,
-		serverUrls: buildServerUrls(c.Addresses, c.TlsEnabled),
-		cli:        newHttpClient(*c),
+		config:    c,
+		endpoints: buildEndpoints(c.Addresses, c.TlsEnabled),
+		cli:       newHttpClient(*c),
+		ctx:       ctx,
+		cancel:    cancel,
 	}
 	client.prevIdx.Store(-1)
+	go client.endpointsCheck()
 	return client, nil
 }
 
-func buildServerUrls(addresses []*Address, tlsEnabled bool) []string {
-	urls := make([]string, len(addresses))
+func (c *client) Close() error {
+	c.cancel()
+	return nil
+}
+
+func buildEndpoints(addresses []*Address, tlsEnabled bool) []endpoint {
+	urls := make([]endpoint, len(addresses))
 	protocol := "http://"
 	if tlsEnabled {
 		protocol = "https://"
 	}
 	for i, addr := range addresses {
-		urls[i] = protocol + addr.Host + ":" + strconv.Itoa(addr.Port)
+		urls[i] = endpoint{url: protocol + addr.Host + ":" + strconv.Itoa(addr.Port)}
 	}
 	return urls
 }

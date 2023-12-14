@@ -43,6 +43,9 @@ type Client interface {
 	// ShowSeries returns the series of specified databases
 	// return [measurement1,tag1=value1 measurement2,tag2=value2]
 	ShowSeries(database, command string) ([]string, error)
+
+	// Close shut down resources, such as health check tasks
+	Close() error
 }
 
 // Config is used to construct a openGemini Client instance.
