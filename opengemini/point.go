@@ -90,11 +90,11 @@ func (p *Point) String() string {
 }
 
 type BatchPoints struct {
-	Points []*Point
+	points []*Point
 }
 
 func (bp *BatchPoints) AddPoint(p *Point) {
-	bp.Points = append(bp.Points, p)
+	bp.points = append(bp.points, p)
 }
 
 func parseTags(tags map[string]string) string {
