@@ -24,7 +24,7 @@ func (p PrecisionType) String() string {
 	case PrecisionMicrosecond:
 		return "PrecisionMicrosecond"
 	case PrecisionMillisecond:
-		return "PrecisionMicrosecond"
+		return "PrecisionMillisecond"
 	case PrecisionSecond:
 		return "PrecisionSecond"
 	case PrecisionMinute:
