@@ -39,6 +39,11 @@ func (c *client) WriteBatchPoints(database string, bp *BatchPoints) error {
 		queryValues: make(url.Values),
 		body:        &buffer,
 	}
+	if c.config.GzipEnabled {
+		req.header = make(http.Header)
+		req.header.Set("Content-Encoding", "gzip")
+		req.header.Set("Accept-Encoding", "gzip")
+	}
 	req.queryValues.Add("db", database)
 	resp, err := c.executeHttpPost(UrlWrite, req)
 	if err != nil {
@@ -83,6 +88,11 @@ func (c *client) WritePoint(database string, point *Point, callbackFunc func(err
 	}
 	req.queryValues.Add("db", database)
 	resp, err := c.executeHttpPost(UrlWrite, req)
+	if c.config.GzipEnabled {
+		req.header = make(http.Header)
+		req.header.Set("Content-Encoding", "gzip")
+		req.header.Set("Accept-Encoding", "gzip")
+	}
 	if err != nil {
 		callbackFunc(err)
 	} else if resp.StatusCode != http.StatusNoContent {
