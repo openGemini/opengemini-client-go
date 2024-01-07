@@ -11,13 +11,8 @@ import (
 
 func (c *client) WriteBatchPoints(database string, bp *BatchPoints) error {
 	var buffer bytes.Buffer
-	var writer io.Writer
+	writer := c.newBuffer(&buffer)
 
-	if c.config.GzipEnabled {
-		writer = gzip.NewWriter(&buffer)
-	} else {
-		writer = &buffer
-	}
 	for _, p := range bp.Points {
 		if p == nil {
 			continue
@@ -35,17 +30,7 @@ func (c *client) WriteBatchPoints(database string, bp *BatchPoints) error {
 		}
 	}
 
-	req := requestDetails{
-		queryValues: make(url.Values),
-		body:        &buffer,
-	}
-	if c.config.GzipEnabled {
-		req.header = make(http.Header)
-		req.header.Set("Content-Encoding", "gzip")
-		req.header.Set("Accept-Encoding", "gzip")
-	}
-	req.queryValues.Add("db", database)
-	resp, err := c.executeHttpPost(UrlWrite, req)
+	resp, err := c.innerWrite(database, &buffer)
 	if err != nil {
 		return err
 	}
@@ -63,14 +48,7 @@ func (c *client) WriteBatchPoints(database string, bp *BatchPoints) error {
 
 func (c *client) WritePoint(database string, point *Point, callbackFunc func(error)) error {
 	var buffer bytes.Buffer
-
-	var writer io.Writer
-
-	if c.config.GzipEnabled {
-		writer = gzip.NewWriter(&buffer)
-	} else {
-		writer = &buffer
-	}
+	writer := c.newBuffer(&buffer)
 
 	if _, err := io.WriteString(writer, point.String()); err != nil {
 		return err
@@ -82,17 +60,7 @@ func (c *client) WritePoint(database string, point *Point, callbackFunc func(err
 		}
 	}
 
-	req := requestDetails{
-		queryValues: make(url.Values),
-		body:        &buffer,
-	}
-	req.queryValues.Add("db", database)
-	resp, err := c.executeHttpPost(UrlWrite, req)
-	if c.config.GzipEnabled {
-		req.header = make(http.Header)
-		req.header.Set("Content-Encoding", "gzip")
-		req.header.Set("Accept-Encoding", "gzip")
-	}
+	resp, err := c.innerWrite(database, &buffer)
 	if err != nil {
 		callbackFunc(err)
 	} else if resp.StatusCode != http.StatusNoContent {
@@ -107,4 +75,26 @@ func (c *client) WritePoint(database string, point *Point, callbackFunc func(err
 		callbackFunc(nil)
 	}
 	return nil
+}
+
+func (c *client) newBuffer(buffer *bytes.Buffer) io.Writer {
+	if c.config.GzipEnabled {
+		return gzip.NewWriter(buffer)
+	} else {
+		return buffer
+	}
+}
+
+func (c *client) innerWrite(database string, buffer *bytes.Buffer) (*http.Response, error) {
+	req := requestDetails{
+		queryValues: make(url.Values),
+		body:        buffer,
+	}
+	if c.config.GzipEnabled {
+		req.header = make(http.Header)
+		req.header.Set("Content-Encoding", "gzip")
+		req.header.Set("Accept-Encoding", "gzip")
+	}
+	req.queryValues.Add("db", database)
+	return c.executeHttpPost(UrlWrite, req)
 }
