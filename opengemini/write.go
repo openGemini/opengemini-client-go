@@ -7,13 +7,16 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync/atomic"
+	"time"
 )
+
+type WriteCallback func(error)
 
 func (c *client) WriteBatchPoints(database string, bp *BatchPoints) error {
 	var buffer bytes.Buffer
 	writer := c.newBuffer(&buffer)
-
-	for _, p := range bp.Points {
+	for _, p := range bp.points {
 		if p == nil {
 			continue
 		}
@@ -46,10 +49,28 @@ func (c *client) WriteBatchPoints(database string, bp *BatchPoints) error {
 	return nil
 }
 
-func (c *client) WritePoint(database string, point *Point, callbackFunc func(error)) error {
+type sendBatchWithCB struct {
+	point    *Point
+	callback WriteCallback
+}
+
+func (c *client) WritePoint(database string, point *Point, callback WriteCallback) error {
+	if c.config.BatchConfig != nil {
+		collection, ok := c.dataChan[database]
+		if !ok {
+			collection = make(chan *sendBatchWithCB, c.config.BatchConfig.BatchSize*2)
+			c.dataChan[database] = collection
+			go c.internalBatchSend(database, collection)
+		}
+		collection <- &sendBatchWithCB{
+			point:    point,
+			callback: callback,
+		}
+		return nil
+	}
+
 	var buffer bytes.Buffer
 	writer := c.newBuffer(&buffer)
-
 	if _, err := io.WriteString(writer, point.String()); err != nil {
 		return err
 	}
@@ -59,22 +80,53 @@ func (c *client) WritePoint(database string, point *Point, callbackFunc func(err
 			return err
 		}
 	}
-
 	resp, err := c.innerWrite(database, &buffer)
 	if err != nil {
-		callbackFunc(err)
+		callback(err)
 	} else if resp.StatusCode != http.StatusNoContent {
 		var p []byte
 		_, err = resp.Body.Read(p)
 		if err != nil {
-			callbackFunc(errors.New("write failed ,status code:" + resp.Status + ",get resp body error for " + err.Error()))
+			callback(errors.New("write failed ,status code:" + resp.Status + ",get resp body error for " + err.Error()))
 		} else {
-			callbackFunc(errors.New(resp.Status + " :" + string(p)))
+			callback(errors.New(resp.Status + " :" + string(p)))
 		}
 	} else {
-		callbackFunc(nil)
+		callback(nil)
 	}
+	defer resp.Body.Close()
 	return nil
+}
+
+func (c *client) internalBatchSend(database string, resource <-chan *sendBatchWithCB) {
+	var tickInterval = time.Duration(c.config.BatchConfig.BatchInterval) * time.Second
+	var ticker = time.NewTicker(tickInterval)
+	var points = new(BatchPoints)
+	var cbs []WriteCallback
+	var needFlush atomic.Bool
+	for {
+		select {
+		case <-ticker.C:
+			needFlush.Store(true)
+		case record := <-resource:
+			points.AddPoint(record.point)
+			cbs = append(cbs, record.callback)
+		}
+		if len(points.points) >= c.config.BatchConfig.BatchSize || needFlush.Load() {
+
+			go func() {
+				err := c.WriteBatchPoints(database, points)
+				for _, callback := range cbs {
+					callback(err)
+				}
+			}()
+
+			needFlush.Store(false)
+			ticker.Reset(tickInterval)
+			points.points = []*Point{}
+			cbs = []WriteCallback{}
+		}
+	}
 }
 
 func (c *client) newBuffer(buffer *bytes.Buffer) io.Writer {
