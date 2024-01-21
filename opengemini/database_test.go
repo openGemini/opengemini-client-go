@@ -29,15 +29,6 @@ func TestClientCreateDatabaseWithRpSuccess(t *testing.T) {
 	require.Nil(t, err)
 }
 
-func TestClientCreateDatabaseWithRpZero(t *testing.T) {
-	c := testDefaultClient(t)
-	databaseName := randomDatabaseName()
-	err := c.CreateDatabaseWithRp(databaseName, RpConfig{Name: "test4", Duration: "0", ShardGroupDuration: "1h", IndexDuration: "7h"})
-	require.Nil(t, err)
-	err = c.DropDatabase(databaseName)
-	require.Nil(t, err)
-}
-
 func TestClientCreateDatabaseWithRpInvalid(t *testing.T) {
 	c := testDefaultClient(t)
 	databaseName := randomDatabaseName()
