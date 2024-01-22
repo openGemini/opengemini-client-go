@@ -2,6 +2,7 @@ package opengemini
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"log"
@@ -27,7 +28,7 @@ func startServer() (int, *http.Server, error) {
 
 	server := &http.Server{Handler: http.DefaultServeMux}
 	go func() {
-		if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
+		if err := server.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Printf("Error serving requests: %v", err)
 		}
 	}()
