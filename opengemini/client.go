@@ -19,7 +19,7 @@ type Client interface {
 	Query(query Query) (*QueryResult, error)
 
 	// WritePoint write single point to assigned database
-	WritePoint(database string, point *Point, callbackFunc func(error)) error
+	WritePoint(database string, point *Point, callbackFunc WriteCallback) error
 	// WriteBatchPoints write batch points to assigned database
 	WriteBatchPoints(database string, bp *BatchPoints) error
 	// CreateDatabase Create database
