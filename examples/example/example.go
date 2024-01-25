@@ -1,5 +1,9 @@
 package main
 
+/*
+	The example code use the dot import, but the user should choose the package import method according to their own needs
+*/
+
 import (
 	"fmt"
 	. "github.com/openGemini/opengemini-client-go/opengemini"
