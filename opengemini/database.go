@@ -52,7 +52,7 @@ func (c *client) CreateDatabaseWithRp(database string, rpConfig RpConfig) error 
 	return nil
 }
 
-func (c *client) ShowDatabase() ([]string, error) {
+func (c *client) ShowDatabases() ([]string, error) {
 	var (
 		ShowDatabases = "SHOW DATABASES"
 		dbResult      = make([]string, 0)

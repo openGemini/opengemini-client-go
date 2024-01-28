@@ -49,9 +49,9 @@ func TestClientCreateDatabaseWithRpEmptyDatabase(t *testing.T) {
 	require.NotNil(t, err)
 }
 
-func TestClientShowDatabase(t *testing.T) {
+func TestClientShowDatabases(t *testing.T) {
 	c := testDefaultClient(t)
-	_, err := c.ShowDatabase()
+	_, err := c.ShowDatabases()
 	require.Nil(t, err)
 }
 
