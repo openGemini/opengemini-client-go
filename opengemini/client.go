@@ -27,7 +27,7 @@ type Client interface {
 	// CreateDatabaseWithRp Create database with retention policy
 	// rpConfig configuration information for retention policy
 	CreateDatabaseWithRp(database string, rpConfig RpConfig) error
-	ShowDatabase() ([]string, error)
+	ShowDatabases() ([]string, error)
 	DropDatabase(database string) error
 
 	// CreateRetentionPolicy
