@@ -1,6 +1,7 @@
 package opengemini
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -84,4 +85,41 @@ func TestClientWritePoint(t *testing.T) {
 	point.AddField("field", "test")
 	err = c.WritePoint(database, point, callback)
 	assert.Nil(t, err)
+}
+
+func TestWriteAssignedIntegerField(t *testing.T) {
+	c := testDefaultClient(t)
+
+	// create a test database with rand suffix
+	database := randomDatabaseName()
+	err := c.CreateDatabase(database)
+	assert.Nil(t, err)
+
+	// delete test database before exit test case
+	defer func() {
+		err := c.DropDatabase(database)
+		assert.Nil(t, err)
+	}()
+
+	callback := func(err error) {
+		assert.Nil(t, err)
+	}
+	measurement := randomMeasurement()
+	point := &Point{}
+	point.Measurement = measurement
+	point.AddTag("tag", "test")
+	point.AddField("field", 123)
+	err = c.WritePoint(database, point, callback)
+	assert.Nil(t, err)
+
+	time.Sleep(time.Second * 5)
+
+	// check field's data type
+	res, err := c.ShowFieldKeys(database, fmt.Sprintf("SHOW FIELD KEYS FROM %s", measurement))
+	assert.Nil(t, err)
+	if value, ok := res[0].Values[0].(keyValue); !ok {
+		t.Fail()
+	} else {
+		assert.Equal(t, "integer", value.Value)
+	}
 }

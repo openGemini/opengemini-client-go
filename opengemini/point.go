@@ -131,7 +131,7 @@ func parseFields(fields map[string]interface{}) string {
 		case string:
 			builder.WriteString("\"" + v + "\"")
 		case int8, uint8, int16, uint16, int, uint, int32, uint32, int64, uint64:
-			builder.WriteString(fmt.Sprintf("%d", v))
+			builder.WriteString(fmt.Sprintf("%di", v))
 		case float32, float64:
 			builder.WriteString(fmt.Sprintf("%f", v))
 		case bool:
