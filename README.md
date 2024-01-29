@@ -9,10 +9,12 @@ OpenGemini is an open-source time series database, find more about OpenGemini at
 
 ## Usage
 
-Import the client library:
+Import the Client Library:
+
+<i><font color=gray>The example code use the dot import, but the user should choose the package import method according to their own needs</font></i>
 
 ```go
-import . "github.com/openGemini/opengemini-client-go"
+import . "github.com/openGemini/opengemini-client-go/opengemini"
 ```
 
 Create a Client:
@@ -43,7 +45,7 @@ Create a Database:
 	}
 ```
 
-Write a single point:
+Write single point:
 
 ```go
 	exampleMeasurement := "ExampleMeasurement"
