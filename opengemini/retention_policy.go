@@ -24,7 +24,7 @@ func (c *client) CreateRetentionPolicy(database string, rpConfig RpConfig, isDef
 		return errors.New("empty database name")
 	}
 	var buf strings.Builder
-	buf.WriteString(fmt.Sprintf("CREATE RETENTION POLICY %s ON %s DURATION %s REPLICATION 1", rpConfig.Name, database, rpConfig.Duration))
+	buf.WriteString(fmt.Sprintf("CREATE RETENTION POLICY %s ON \"%s\" DURATION %s REPLICATION 1", rpConfig.Name, database, rpConfig.Duration))
 	if len(rpConfig.ShardGroupDuration) > 0 {
 		buf.WriteString(fmt.Sprintf(" SHARD DURATION %s", rpConfig.ShardGroupDuration))
 	}
@@ -136,7 +136,7 @@ func (c *client) DropRetentionPolicy(database, retentionPolicy string) error {
 		return errors.New("empty database name")
 	}
 
-	cmd := fmt.Sprintf("DROP RETENTION POLICY %s ON %s", retentionPolicy, database)
+	cmd := fmt.Sprintf("DROP RETENTION POLICY %s ON \"%s\"", retentionPolicy, database)
 	queryResult, err := c.queryPost(Query{Command: cmd})
 	if err != nil {
 		return err

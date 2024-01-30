@@ -67,3 +67,11 @@ func TestClientDropDatabaseEmptyDatabase(t *testing.T) {
 	err := c.DropDatabase("")
 	require.NotNil(t, err)
 }
+
+func TestCreateAndDropDatabaseWithSpecificSymbol(t *testing.T) {
+	c := testDefaultClient(t)
+	err := c.CreateDatabase("Specific-Symbol")
+	require.Nil(t, err)
+	err = c.DropDatabase("Specific-Symbol")
+	require.Nil(t, err)
+}

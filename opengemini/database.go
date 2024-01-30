@@ -11,7 +11,7 @@ func (c *client) CreateDatabase(database string) error {
 		return errors.New("empty database name")
 	}
 
-	cmd := fmt.Sprintf("CREATE DATABASE %s", database)
+	cmd := fmt.Sprintf("CREATE DATABASE \"%s\"", database)
 	queryResult, err := c.queryPost(Query{Command: cmd})
 	if err != nil {
 		return err
@@ -31,7 +31,7 @@ func (c *client) CreateDatabaseWithRp(database string, rpConfig RpConfig) error 
 	}
 
 	var buf strings.Builder
-	buf.WriteString(fmt.Sprintf("CREATE DATABASE %s WITH DURATION %s REPLICATION 1", database, rpConfig.Duration))
+	buf.WriteString(fmt.Sprintf("CREATE DATABASE \"%s\" WITH DURATION %s REPLICATION 1", database, rpConfig.Duration))
 	if len(rpConfig.ShardGroupDuration) > 0 {
 		buf.WriteString(fmt.Sprintf(" SHARD DURATION %s", rpConfig.ShardGroupDuration))
 	}
@@ -85,7 +85,7 @@ func (c *client) DropDatabase(database string) error {
 	if len(database) == 0 {
 		return errors.New("empty database name")
 	}
-	cmd := fmt.Sprintf("DROP DATABASE %s", database)
+	cmd := fmt.Sprintf("DROP DATABASE \"%s\"", database)
 	queryResult, err := c.queryPost(Query{Command: cmd})
 	if err != nil {
 		return err
