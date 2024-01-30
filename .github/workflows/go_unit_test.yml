@@ -19,4 +19,4 @@ jobs:
       - name: setup OpenGemini
         uses: shoothzj/setup-opengemini-action@main
       - name: Run coverage
-        run: go test ./... -coverpkg=./padmin/... -race -coverprofile=coverage.out -covermode=atomic
+        run: go test ./... -coverpkg=./opengemini/... -race -coverprofile=coverage.out -covermode=atomic
