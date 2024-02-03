@@ -109,6 +109,9 @@ func (c *client) internalBatchSend(database string, resource <-chan *sendBatchWi
 	var needFlush atomic.Bool
 	for {
 		select {
+		case <-c.ctx.Done():
+			ticker.Stop()
+			return
 		case <-ticker.C:
 			needFlush.Store(true)
 		case record := <-resource:
