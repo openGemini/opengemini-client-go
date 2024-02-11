@@ -1,25 +1,25 @@
 # opengemini-client-go
-opengemini-client-go is a Go client API for OpenGemini. 
+opengemini-client-go 是一个基于go语言的 OpenGemini 客户端开源库
 
-English | [中文简体](README_CN.md) 
+中文简体 | [English](README.md)
 
-OpenGemini is an open-source time series database, find more about OpenGemini at https://github.com/openGemini/openGemini
+OpenGemini 是华为云开源的一款云原生分布式时序数据库，获取更多关于 OpenGemini 的信息可点击 https://github.com/openGemini/openGemini
 
-## Requirements
+## 要求
 
 - Go 1.19
 
-## Usage
+## 用法
 
-Import the Client Library:
+引入客户端库：
 
-<i><font color=gray>The example code use the dot import, but the user should choose the package import method according to their own needs</font></i>
+<i><font color=gray>示例使用点引用法，用户可结合具体需要选择适合的引用方式。</font></i>
 
 ```go
 import . "github.com/openGemini/opengemini-client-go/opengemini"
 ```
 
-Create a Client:
+创建客户端：
 
 ```go
 config := &Config{
@@ -36,7 +36,7 @@ if err != nil {
 }
 ```
 
-Create a Database:
+创建数据库：
 
 ```go
 exampleDatabase := "ExampleDatabase"
@@ -47,7 +47,7 @@ if err != nil {
 }
 ```
 
-Write single point:
+写入单个点：
 
 ```go
 exampleMeasurement := "ExampleMeasurement"
@@ -66,7 +66,7 @@ if err != nil {
 }
 ```
 
-Write batch points:
+批量写入点：
 
 ```go
 exampleMeasurement := "ExampleMeasurement"
@@ -89,7 +89,7 @@ if err != nil {
 }
 ```
 
-Do a query:
+执行查询：
 
 ```go
 q := Query{
