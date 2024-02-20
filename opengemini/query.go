@@ -13,8 +13,8 @@ type Query struct {
 }
 
 type keyValue struct {
-	Name string
-	Value   string
+	Name  string
+	Value string
 }
 
 // Query sends a command to the server
@@ -24,6 +24,8 @@ func (c *client) Query(q Query) (*QueryResult, error) {
 	}
 	req.queryValues.Add("db", q.Database)
 	req.queryValues.Add("q", q.Command)
+	req.queryValues.Add("rp", q.RetentionPolicy)
+
 	resp, err := c.executeHttpGet(UrlQuery, req)
 	if err != nil {
 		return nil, err
