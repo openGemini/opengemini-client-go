@@ -94,8 +94,8 @@ type AuthConfig struct {
 
 // BatchConfig represents the configuration information for batch processing.
 type BatchConfig struct {
-	// BatchInterval batch time interval that triggers batch processing. (unit: ms)
-	BatchInterval int
+	// BatchInterval batch time interval that triggers batch processing.
+	BatchInterval time.Duration
 	// BatchSize batch size that triggers batch processing.
 	BatchSize int
 }

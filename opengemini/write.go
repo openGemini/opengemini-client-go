@@ -102,7 +102,7 @@ func (c *client) WritePoint(database string, point *Point, callback WriteCallbac
 }
 
 func (c *client) internalBatchSend(database string, resource <-chan *sendBatchWithCB) {
-	var tickInterval = time.Duration(c.config.BatchConfig.BatchInterval) * time.Second
+	var tickInterval = c.config.BatchConfig.BatchInterval
 	var ticker = time.NewTicker(tickInterval)
 	var points = new(BatchPoints)
 	var cbs []WriteCallback
