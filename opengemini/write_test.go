@@ -123,3 +123,101 @@ func TestWriteAssignedIntegerField(t *testing.T) {
 		assert.Equal(t, "integer", value.Value)
 	}
 }
+
+func TestWriteWithBatchInterval(t *testing.T) {
+	c := testNewClient(t, &Config{
+		Addresses: []*Address{{
+			Host: "127.0.0.1",
+			Port: 8086,
+		}},
+		BatchConfig: &BatchConfig{
+			BatchSize:     5000,
+			BatchInterval: time.Second * 5,
+		},
+	})
+
+	// create a test database with rand suffix
+	database := randomDatabaseName()
+	err := c.CreateDatabase(database)
+	assert.Nil(t, err)
+
+	// delete test database before exit test case
+	defer func() {
+		err := c.DropDatabase(database)
+		assert.Nil(t, err)
+	}()
+
+	//TestBatchInterval
+	point := &Point{}
+	point.SetMeasurement("test")
+	point.AddField("field", "interval")
+	receiver := make(chan struct{})
+	startTime := time.Now()
+	err = c.WritePoint(database, point, func(err error) {
+		receiver <- struct{}{}
+	})
+	assert.Nil(t, err)
+	timer := time.NewTimer(10 * time.Second)
+	for {
+		select {
+		case <-receiver:
+			goto END
+		case <-timer.C:
+			goto END
+		}
+	}
+END:
+	duration := time.Since(startTime)
+	assert.Equal(t, true, duration < 10*time.Second)
+}
+
+func TestWriteWithBatchSize(t *testing.T) {
+	c := testNewClient(t, &Config{
+		Addresses: []*Address{{
+			Host: "127.0.0.1",
+			Port: 8086,
+		}},
+		BatchConfig: &BatchConfig{
+			BatchSize:     10,
+			BatchInterval: time.Hour,
+		},
+	})
+
+	// create a test database with rand suffix
+	database := randomDatabaseName()
+	err := c.CreateDatabase(database)
+	assert.Nil(t, err)
+
+	// delete test database before exit test case
+	defer func() {
+		err := c.DropDatabase(database)
+		assert.Nil(t, err)
+	}()
+	callbackCount := 0
+	receiver := make(chan struct{}, 10)
+	for i := 0; i < 10; i++ {
+		point := &Point{}
+		point.SetMeasurement("test")
+		point.AddField("field", "test")
+		point.SetTime(time.Now())
+		err := c.WritePoint(database, point, func(err error) {
+			receiver <- struct{}{}
+		})
+		assert.Nil(t, err)
+	}
+	timer := time.NewTimer(30 * time.Second)
+	for {
+		select {
+		case <-receiver:
+			callbackCount++
+		case <-timer.C:
+			goto END
+		default:
+			if callbackCount == 10 {
+				goto END
+			}
+		}
+	}
+END:
+	assert.Equal(t, 10, callbackCount)
+}
