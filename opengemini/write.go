@@ -86,7 +86,10 @@ func (c *client) WritePoint(database string, point *Point, callback WriteCallbac
 	resp, err := c.innerWrite(database, &buffer)
 	if err != nil {
 		callback(err)
-	} else if resp.StatusCode != http.StatusNoContent {
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusNoContent {
 		var p []byte
 		_, err = resp.Body.Read(p)
 		if err != nil {
@@ -97,7 +100,7 @@ func (c *client) WritePoint(database string, point *Point, callback WriteCallbac
 	} else {
 		callback(nil)
 	}
-	defer resp.Body.Close()
+
 	return nil
 }
 
