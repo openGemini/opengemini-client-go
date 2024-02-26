@@ -3,7 +3,7 @@ package opengemini
 import (
 	"bytes"
 	"compress/gzip"
-	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -41,11 +41,11 @@ func (c *client) WriteBatchPoints(database string, bp *BatchPoints) error {
 
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent {
-		reason, err := io.ReadAll(resp.Body)
+		errorBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return errors.New("write failed and couldn't get the error for " + err.Error())
+			return fmt.Errorf("failed to read response body after write failure: %w", err)
 		}
-		return errors.New("write failed for " + string(reason))
+		return fmt.Errorf("write failed, error: %s", string(errorBody))
 	}
 	return nil
 }
@@ -90,12 +90,11 @@ func (c *client) WritePoint(database string, point *Point, callback WriteCallbac
 
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent {
-		var p []byte
-		_, err = resp.Body.Read(p)
+		errorBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			callback(errors.New("write failed ,status code:" + resp.Status + ",get resp body error for " + err.Error()))
+			callback(fmt.Errorf("failed to read response body after write failure: %w", err))
 		} else {
-			callback(errors.New(resp.Status + " :" + string(p)))
+			callback(fmt.Errorf("write failed, status: %s, error: %s", resp.Status, string(errorBody)))
 		}
 	} else {
 		callback(nil)
