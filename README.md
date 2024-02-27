@@ -1,7 +1,7 @@
 # opengemini-client-go
 opengemini-client-go is a Go client API for OpenGemini. 
 
-English | [中文简体](README_CN.md) 
+English | [简体中文](README_CN.md) 
 
 OpenGemini is an open-source time series database, find more about OpenGemini at https://github.com/openGemini/openGemini
 
