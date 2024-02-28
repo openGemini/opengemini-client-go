@@ -1,5 +1,6 @@
 # opengemini-client-go
-opengemini-client-go 是一个基于go语言的 OpenGemini 客户端开源库
+
+opengemini-client-go 是一个用 Go 语言编写的 OpenGemini 客户端。
 
 简体中文 | [English](README.md)
 

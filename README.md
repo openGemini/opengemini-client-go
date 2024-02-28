@@ -1,5 +1,6 @@
 # opengemini-client-go
-opengemini-client-go is a Go client API for OpenGemini. 
+
+opengemini-client-go is a Go client for OpenGemini. 
 
 English | [简体中文](README_CN.md) 
 
