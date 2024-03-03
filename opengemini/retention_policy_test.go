@@ -68,7 +68,7 @@ func TestClientShowRetentionPolicy(t *testing.T) {
 	databaseName := randomDatabaseName()
 	err := c.CreateDatabase(databaseName)
 	require.Nil(t, err)
-	rpResult, err := c.ShowRetentionPolicy(databaseName)
+	rpResult, err := c.ShowRetentionPolicies(databaseName)
 	require.Nil(t, err)
 	require.NotEqual(t, len(rpResult), 0)
 	err = c.DropDatabase(databaseName)

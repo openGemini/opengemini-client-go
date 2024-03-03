@@ -49,7 +49,7 @@ func (c *client) CreateRetentionPolicy(database string, rpConfig RpConfig, isDef
 }
 
 // ShowRetentionPolicy Show retention policy
-func (c *client) ShowRetentionPolicy(database string) ([]RetentionPolicy, error) {
+func (c *client) ShowRetentionPolicies(database string) ([]RetentionPolicy, error) {
 	var (
 		ShowRetentionPolicy = "SHOW RETENTION POLICIES"
 		rpResult            = make([]RetentionPolicy, 0)
