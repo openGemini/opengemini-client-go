@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -20,7 +21,7 @@ type client struct {
 	endpoints []endpoint
 	cli       *http.Client
 	prevIdx   atomic.Int32
-	dataChan  map[string]chan *sendBatchWithCB
+	dataChan  sync.Map
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -64,7 +65,6 @@ func newClient(c *Config) (Client, error) {
 		cli:       newHttpClient(*c),
 		ctx:       ctx,
 		cancel:    cancel,
-		dataChan:  make(map[string]chan *sendBatchWithCB),
 	}
 	client.prevIdx.Store(-1)
 	go client.endpointsCheck()

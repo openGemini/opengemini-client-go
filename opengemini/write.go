@@ -57,12 +57,18 @@ type sendBatchWithCB struct {
 
 func (c *client) WritePoint(database string, point *Point, callback WriteCallback) error {
 	if c.config.BatchConfig != nil {
-		collection, ok := c.dataChan[database]
+		value, ok := c.dataChan.Load(database)
 		if !ok {
-			collection = make(chan *sendBatchWithCB, c.config.BatchConfig.BatchSize*2)
-			c.dataChan[database] = collection
-			go c.internalBatchSend(database, collection)
+			newCollection := make(chan *sendBatchWithCB, c.config.BatchConfig.BatchSize*2)
+			actual, loaded := c.dataChan.LoadOrStore(database, newCollection)
+			if loaded {
+				close(newCollection)
+			} else {
+				go c.internalBatchSend(database, actual.(chan *sendBatchWithCB))
+			}
+			value = actual
 		}
+		collection := value.(chan *sendBatchWithCB)
 		collection <- &sendBatchWithCB{
 			point:    point,
 			callback: callback,
