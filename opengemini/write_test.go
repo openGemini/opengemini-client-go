@@ -205,19 +205,16 @@ func TestWriteWithBatchSize(t *testing.T) {
 		})
 		assert.Nil(t, err)
 	}
+
 	timer := time.NewTimer(30 * time.Second)
-	for {
+	defer timer.Stop()
+
+	for callbackCount < 10 {
 		select {
 		case <-receiver:
 			callbackCount++
 		case <-timer.C:
-			goto END
-		default:
-			if callbackCount == 10 {
-				goto END
-			}
+			t.Fatalf("Test timed out")
 		}
 	}
-END:
-	assert.Equal(t, 10, callbackCount)
 }
