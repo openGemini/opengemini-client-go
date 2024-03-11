@@ -1,6 +1,7 @@
 package opengemini
 
 import (
+	"context"
 	"crypto/tls"
 	"time"
 )
@@ -19,7 +20,7 @@ type Client interface {
 	Query(query Query) (*QueryResult, error)
 
 	// WritePoint write single point to assigned database
-	WritePoint(database string, point *Point, callbackFunc WriteCallback) error
+	WritePoint(ctx context.Context, database string, point *Point, callbackFunc WriteCallback) error
 	// WriteBatchPoints write batch points to assigned database
 	WriteBatchPoints(database string, bp *BatchPoints) error
 	// CreateDatabase Create database

@@ -3,6 +3,7 @@ package opengemini
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -55,7 +56,7 @@ type sendBatchWithCB struct {
 	callback WriteCallback
 }
 
-func (c *client) WritePoint(database string, point *Point, callback WriteCallback) error {
+func (c *client) WritePoint(ctx context.Context, database string, point *Point, callback WriteCallback) error {
 	if c.config.BatchConfig != nil {
 		value, ok := c.dataChan.Load(database)
 		if !ok {
@@ -64,7 +65,7 @@ func (c *client) WritePoint(database string, point *Point, callback WriteCallbac
 			if loaded {
 				close(newCollection)
 			} else {
-				go c.internalBatchSend(database, actual.(chan *sendBatchWithCB))
+				go c.internalBatchSend(ctx, database, actual.(chan *sendBatchWithCB))
 			}
 			value = actual
 		}
@@ -109,7 +110,7 @@ func (c *client) WritePoint(database string, point *Point, callback WriteCallbac
 	return nil
 }
 
-func (c *client) internalBatchSend(database string, resource <-chan *sendBatchWithCB) {
+func (c *client) internalBatchSend(ctx context.Context, database string, resource <-chan *sendBatchWithCB) {
 	var tickInterval = c.config.BatchConfig.BatchInterval
 	var ticker = time.NewTicker(tickInterval)
 	var points = new(BatchPoints)
@@ -117,7 +118,7 @@ func (c *client) internalBatchSend(database string, resource <-chan *sendBatchWi
 	var needFlush atomic.Bool
 	for {
 		select {
-		case <-c.ctx.Done():
+		case <-ctx.Done():
 			ticker.Stop()
 			return
 		case <-ticker.C:

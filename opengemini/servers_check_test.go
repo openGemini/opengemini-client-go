@@ -63,8 +63,9 @@ func TestServerCheck(t *testing.T) {
 		prevIdx: atomic.Int32{},
 	}
 	cli.prevIdx.Store(-1)
-	cli.ctx, cli.cancel = context.WithCancel(context.Background())
-	go cli.endpointsCheck()
+	var ctx context.Context
+	ctx, cli.cancel = context.WithCancel(context.Background())
+	go cli.endpointsCheck(ctx)
 
 	url, err := cli.getServerUrl()
 	assert.NoError(t, err)
