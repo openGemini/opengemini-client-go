@@ -1,6 +1,7 @@
 package opengemini
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"time"
@@ -12,11 +13,11 @@ const (
 	healthCheckPeriod = time.Second * 10
 )
 
-func (c *client) endpointsCheck() {
+func (c *client) endpointsCheck(ctx context.Context) {
 	var t = time.NewTicker(healthCheckPeriod)
 	for {
 		select {
-		case <-c.ctx.Done():
+		case <-ctx.Done():
 			t.Stop()
 			return
 		case <-t.C:
