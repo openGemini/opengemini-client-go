@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"sync/atomic"
 	"time"
 )
 
@@ -15,19 +14,13 @@ type WriteCallback func(error)
 
 func (c *client) WriteBatchPoints(database string, bp *BatchPoints) error {
 	var buffer bytes.Buffer
-	writer := c.newBuffer(&buffer)
+	writer := c.newWriter(&buffer)
 
-	for _, p := range bp.Points {
-		if p == nil {
-			continue
-		}
-		if _, err := io.WriteString(writer, p.String()); err != nil {
-			return err
-		}
-		if _, err := writer.Write([]byte{'\n'}); err != nil {
-			return err
-		}
+	enc := NewLineProtocolEncoder(writer)
+	if err := enc.BatchEncode(bp); err != nil {
+		return err
 	}
+
 	if closer, ok := writer.(io.Closer); ok {
 		if err := closer.Close(); err != nil {
 			return err
@@ -77,9 +70,10 @@ func (c *client) WritePoint(database string, point *Point, callback WriteCallbac
 	}
 
 	var buffer bytes.Buffer
-	writer := c.newBuffer(&buffer)
+	writer := c.newWriter(&buffer)
 
-	if _, err := io.WriteString(writer, point.String()); err != nil {
+	enc := NewLineProtocolEncoder(writer)
+	if err := enc.Encode(point); err != nil {
 		return err
 	}
 
@@ -114,24 +108,24 @@ func (c *client) internalBatchSend(database string, resource <-chan *sendBatchWi
 	var ticker = time.NewTicker(tickInterval)
 	var points = new(BatchPoints)
 	var cbs []WriteCallback
-	var needFlush atomic.Bool
+	needFlush := false
 	for {
 		select {
 		case <-c.ctx.Done():
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			needFlush.Store(true)
+			needFlush = true
 		case record := <-resource:
 			points.AddPoint(record.point)
 			cbs = append(cbs, record.callback)
 		}
-		if len(points.Points) >= c.config.BatchConfig.BatchSize || needFlush.Load() {
+		if len(points.Points) >= c.config.BatchConfig.BatchSize || needFlush {
 			err := c.WriteBatchPoints(database, points)
 			for _, callback := range cbs {
 				callback(err)
 			}
-			needFlush.Store(false)
+			needFlush = false
 			ticker.Reset(tickInterval)
 			points.Points = []*Point{}
 			cbs = []WriteCallback{}
@@ -139,7 +133,7 @@ func (c *client) internalBatchSend(database string, resource <-chan *sendBatchWi
 	}
 }
 
-func (c *client) newBuffer(buffer *bytes.Buffer) io.Writer {
+func (c *client) newWriter(buffer *bytes.Buffer) io.Writer {
 	if c.config.GzipEnabled {
 		return gzip.NewWriter(buffer)
 	} else {
