@@ -7,38 +7,62 @@ import (
 	"time"
 )
 
-func (p *Point) MarshalString() string {
+func encodePoint(p *Point) string {
 	var buf bytes.Buffer
 	enc := NewLineProtocolEncoder(&buf)
-	enc.Encode(p)
+	_ = enc.Encode(p)
 	return buf.String()
 }
 
-func TestPoint_String(t *testing.T) {
+func TestWriteString(t *testing.T) {
+	cases := []struct {
+		s, charsToEscape, result string
+	}{
+		{s: "foo", charsToEscape: "", result: "foo"},
+		{s: `f\\oo`, charsToEscape: "", result: `f\\\oo`},
+		{s: `\fo\o\`, charsToEscape: "", result: `\fo\o\`},
+		{s: `foo bar`, charsToEscape: " ", result: `foo\ bar`},
+		{s: `foo\ bar`, charsToEscape: " ", result: `foo\\\ bar`},
+		{s: `foo,\ bar`, charsToEscape: ", ", result: `foo\,\\\ bar`},
+		{s: `foo,\  bar`, charsToEscape: ", ", result: `foo\,\\\ \ bar`},
+		{s: `foo=,\  ba\r`, charsToEscape: ",= ", result: `foo\=\,\\\ \ ba\r`},
+	}
+
+	for _, c := range cases {
+		var buf bytes.Buffer
+		enc := NewLineProtocolEncoder(&buf)
+		_ = enc.writeString(c.s, c.charsToEscape)
+		if buf.String() != c.result {
+			t.Errorf("unexpected result: got %s, want %s", buf.String(), c.result)
+		}
+	}
+}
+
+func TestPointEncode(t *testing.T) {
 	point := &Point{}
-	// parse Point which hasn't set measurement
-	if strings.Compare(point.MarshalString(), "") != 0 {
+	// encode Point which hasn't set measurement
+	if strings.Compare(encodePoint(point), "") != 0 {
 		t.Error("error translate for point hasn't set measurement")
 	}
 	point.SetMeasurement("measurement")
-	// parse Point which hasn't own field
-	if strings.Compare(point.MarshalString(), "") != 0 {
+	// encode Point which hasn't own field
+	if strings.Compare(encodePoint(point), "") != 0 {
 		t.Error("error translate for point hasn't own field")
 	}
 	point.AddField("filed1", "string field")
-	// parse Point which only has a field
-	if strings.Compare(point.MarshalString(),
+	// encode Point which only has a field
+	if strings.Compare(encodePoint(point),
 		"measurement filed1=\"string field\"") != 0 {
 		t.Error("parse point with a string filed failed")
 	}
 	point.AddTag("tag", "tag1")
-	// parse Point which has a field with a tag
-	if strings.Compare(point.MarshalString(),
+	// encode Point which has a field with a tag
+	if strings.Compare(encodePoint(point),
 		"measurement,tag=tag1 filed1=\"string field\"") != 0 {
 		t.Error("parse point with a tag failed")
 	}
 	point.SetTime(time.Date(2023, 12, 1, 12, 32, 18, 132363612, time.UTC))
-	if strings.Compare(point.MarshalString(),
+	if strings.Compare(encodePoint(point),
 		"measurement,tag=tag1 filed1=\"string field\" 1701433938132363612") != 0 {
 		t.Error("parse point with a tag failed")
 	}

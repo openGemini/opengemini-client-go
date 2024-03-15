@@ -92,19 +92,25 @@ func (enc *LineProtocolEncoder) writeByte(b byte) error {
 	return err
 }
 
+// writeString writes a string to the underlying writer, escaping characters
+// with a backslash if necessary. Note that, for simplity, `charsToEscape` can
+// only contain ASCII characters.
 func (enc *LineProtocolEncoder) writeString(s string, charsToEscape string) error {
-	if !strings.ContainsAny(s, charsToEscape) {
-		_, err := io.WriteString(enc.w, s)
-		return err
-	}
-
 	for i := 0; i < len(s); i++ {
 		c := s[i]
-		if strings.IndexByte(charsToEscape, c) != -1 {
+
+		needEscape := strings.IndexByte(charsToEscape, c) != -1
+		if !needEscape && c == '\\' && i < len(s)-1 {
+			c1 := s[i+1]
+			needEscape = c1 == '\\' || strings.IndexByte(charsToEscape, c1) != -1
+		}
+
+		if needEscape {
 			if err := enc.writeByte('\\'); err != nil {
 				return err
 			}
 		}
+
 		if err := enc.writeByte(c); err != nil {
 			return err
 		}
@@ -118,7 +124,11 @@ func (enc *LineProtocolEncoder) writeFieldValue(v interface{}) error {
 
 	switch v := v.(type) {
 	case string:
-		err = enc.writeString(v, `"\`)
+		if err = enc.writeByte('"'); err == nil {
+			if err = enc.writeString(v, `"`); err == nil {
+				err = enc.writeByte('"')
+			}
+		}
 	case int8:
 		if _, err = io.WriteString(enc.w, strconv.FormatInt(int64(v), 10)); err == nil {
 			err = enc.writeByte('i')
@@ -181,7 +191,7 @@ func (enc *LineProtocolEncoder) Encode(p *Point) error {
 		return nil
 	}
 
-	if err := enc.writeString(p.Measurement, `, \`); err != nil {
+	if err := enc.writeString(p.Measurement, `, `); err != nil {
 		return err
 	}
 
@@ -189,13 +199,13 @@ func (enc *LineProtocolEncoder) Encode(p *Point) error {
 		if err := enc.writeByte(','); err != nil {
 			return err
 		}
-		if err := enc.writeString(k, `, =\`); err != nil {
+		if err := enc.writeString(k, `, =`); err != nil {
 			return err
 		}
 		if err := enc.writeByte('='); err != nil {
 			return err
 		}
-		if err := enc.writeString(v, `, =\`); err != nil {
+		if err := enc.writeString(v, `, =`); err != nil {
 			return err
 		}
 	}
@@ -207,7 +217,7 @@ func (enc *LineProtocolEncoder) Encode(p *Point) error {
 		}
 		sep = ','
 
-		if err := enc.writeString(k, `, =\`); err != nil {
+		if err := enc.writeString(k, `, =`); err != nil {
 			return err
 		}
 		if err := enc.writeByte('='); err != nil {
