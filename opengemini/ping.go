@@ -1,15 +1,23 @@
 package opengemini
 
-import "net/http"
+import (
+	"errors"
+	"io"
+	"net/http"
+)
 
 // Ping check that status of cluster.
 func (c *client) Ping(idx int) error {
 	resp, err := c.executeHttpGetByIdx(idx, UrlPing, requestDetails{})
 	if err != nil {
-		return err
+		return errors.New("ping request failed, error: " + err.Error())
 	}
 	if resp.StatusCode != http.StatusNoContent {
-		return nil
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return errors.New("read ping resp failed, error: " + err.Error())
+		}
+		return errors.New("ping error resp, code: " + resp.Status + "body: " + string(body))
 	}
 	return nil
 }
