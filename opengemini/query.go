@@ -2,8 +2,10 @@ package opengemini
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
 )
 
 type Query struct {
@@ -28,18 +30,20 @@ func (c *client) Query(q Query) (*QueryResult, error) {
 
 	resp, err := c.executeHttpGet(UrlQuery, req)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("query request failed, error: " + err.Error())
 	}
-
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("query resp read failed, error: " + err.Error())
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("query error resp, code: " + resp.Status + "body: " + string(body))
 	}
 	var qr = new(QueryResult)
 	err = json.Unmarshal(body, qr)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("query unmarshal resp body failed, error: " + err.Error())
 	}
 	return qr, nil
 }
@@ -53,20 +57,24 @@ func (c *client) queryPost(q Query) (*QueryResult, error) {
 	req.queryValues.Add("q", q.Command)
 	resp, err := c.executeHttpPost(UrlQuery, req)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("query post request failed, error: " + err.Error())
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("query post read resp failed, error: " + err.Error())
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("query post error resp, code: " + resp.Status + "body: " + string(body))
 	}
 	var qr = new(QueryResult)
 	err = json.Unmarshal(body, qr)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("query post unmarshal resp body failed, error: " + err.Error())
 	}
 	return qr, nil
+
 }
 
 func (c *client) showTagSeriesQuery(database, command string) ([]ValuesResult, error) {
@@ -78,7 +86,7 @@ func (c *client) showTagSeriesQuery(database, command string) ([]ValuesResult, e
 
 	err = tagSeriesResult.hasError()
 	if err != nil {
-		return tagSeries, fmt.Errorf("query err: %s", err)
+		return tagSeries, fmt.Errorf("get tagSeriesResult failed, error: %s", err)
 	}
 	if len(tagSeriesResult.Results) == 0 {
 		return tagSeries, nil
@@ -109,7 +117,7 @@ func (c *client) showTagFieldQuery(database, command string) ([]ValuesResult, er
 
 	err = tagKeyResult.hasError()
 	if err != nil {
-		return tagValueResult, fmt.Errorf("query err: %s", err)
+		return tagValueResult, fmt.Errorf("get tagKeyResult failed, error: %s", err)
 	}
 	if len(tagKeyResult.Results) == 0 {
 		return tagValueResult, nil
