@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -19,27 +20,27 @@ func (c *client) WriteBatchPoints(database string, bp *BatchPoints) error {
 
 	enc := NewLineProtocolEncoder(writer)
 	if err := enc.BatchEncode(bp); err != nil {
-		return err
+		return errors.New("batchEncode failed, error: " + err.Error())
 	}
 
 	if closer, ok := writer.(io.Closer); ok {
 		if err := closer.Close(); err != nil {
-			return err
+			return errors.New("writer close failed, error: " + err.Error())
 		}
 	}
 
 	resp, err := c.innerWrite(database, &buffer)
 	if err != nil {
-		return err
+		return errors.New("innerWrite request failed, error: " + err.Error())
 	}
 
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent {
 		errorBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("failed to read response body after write failure: %w", err)
+			return errors.New("writeBatchPoint read resp body failed, error: " + err.Error())
 		}
-		return fmt.Errorf("write failed, error: %s", string(errorBody))
+		return errors.New("writeBatchPoint error resp, code: " + resp.Status + "body: " + string(errorBody))
 	}
 	return nil
 }
@@ -75,27 +76,27 @@ func (c *client) WritePoint(ctx context.Context, database string, point *Point, 
 
 	enc := NewLineProtocolEncoder(writer)
 	if err := enc.Encode(point); err != nil {
-		return err
+		return errors.New("encode failed, error: " + err.Error())
 	}
 
 	if closer, ok := writer.(io.Closer); ok {
 		if err := closer.Close(); err != nil {
-			return err
+			return errors.New("writer close failed, error: " + err.Error())
 		}
 	}
 
 	resp, err := c.innerWrite(database, &buffer)
 	if err != nil {
-		callback(err)
+		callback(errors.New("innerWrite request failed, error: " + err.Error()))
 	}
 
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent {
 		errorBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			callback(fmt.Errorf("failed to read response body after write failure: %w", err))
+			callback(errors.New("writePoint read resp body failed, error: " + err.Error()))
 		} else {
-			callback(fmt.Errorf("write failed, status: %s, error: %s", resp.Status, string(errorBody)))
+			callback(fmt.Errorf("writePoint error resp, code: " + resp.Status + "body: " + string(errorBody)))
 		}
 	} else {
 		callback(nil)
