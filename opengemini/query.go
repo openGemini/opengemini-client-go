@@ -57,21 +57,21 @@ func (c *client) queryPost(q Query) (*QueryResult, error) {
 	req.queryValues.Add("q", q.Command)
 	resp, err := c.executeHttpPost(UrlQuery, req)
 	if err != nil {
-		return nil, errors.New("query post request failed, error: " + err.Error())
+		return nil, errors.New("request failed, error: " + err.Error())
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.New("query post read resp failed, error: " + err.Error())
+		return nil, errors.New("read resp failed, error: " + err.Error())
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("query post error resp, code: " + resp.Status + "body: " + string(body))
+		return nil, errors.New("error resp, code: " + resp.Status + "body: " + string(body))
 	}
 	var qr = new(QueryResult)
 	err = json.Unmarshal(body, qr)
 	if err != nil {
-		return nil, errors.New("query post unmarshal resp body failed, error: " + err.Error())
+		return nil, errors.New("unmarshal resp body failed, error: " + err.Error())
 	}
 	return qr, nil
 
