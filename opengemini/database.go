@@ -19,7 +19,7 @@ func (c *client) CreateDatabase(database string) error {
 
 	err = queryResult.hasError()
 	if err != nil {
-		return fmt.Errorf("create database err: %s", err)
+		return fmt.Errorf("create database %w", err)
 	}
 
 	return nil
@@ -46,7 +46,7 @@ func (c *client) CreateDatabaseWithRp(database string, rpConfig RpConfig) error 
 
 	err = queryResult.hasError()
 	if err != nil {
-		return fmt.Errorf("create database err: %s", err)
+		return fmt.Errorf("create database with rentention policy err: %w", err)
 	}
 
 	return nil
@@ -92,7 +92,7 @@ func (c *client) DropDatabase(database string) error {
 	}
 	err = queryResult.hasError()
 	if err != nil {
-		return fmt.Errorf("drop database err: %s", err)
+		return fmt.Errorf("drop database %w", err)
 	}
 	return nil
 }

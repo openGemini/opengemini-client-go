@@ -42,7 +42,7 @@ func (c *client) CreateRetentionPolicy(database string, rpConfig RpConfig, isDef
 
 	err = queryResult.hasError()
 	if err != nil {
-		return fmt.Errorf("create retention policy err: %s", err)
+		return fmt.Errorf("create retention policy %w", err)
 	}
 
 	return nil
@@ -143,7 +143,7 @@ func (c *client) DropRetentionPolicy(database, retentionPolicy string) error {
 	}
 	err = queryResult.hasError()
 	if err != nil {
-		return fmt.Errorf("drop  retention policy err: %s", err)
+		return fmt.Errorf("drop  retention policy %w", err)
 	}
 	return nil
 }
