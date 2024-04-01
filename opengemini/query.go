@@ -12,6 +12,8 @@ type Query struct {
 	Database        string
 	Command         string
 	RetentionPolicy string
+	// Precision Timestamp reply format , without Precision server will reply with RFC3339 format
+	Precision PrecisionType
 }
 
 type keyValue struct {
@@ -27,6 +29,7 @@ func (c *client) Query(q Query) (*QueryResult, error) {
 	req.queryValues.Add("db", q.Database)
 	req.queryValues.Add("q", q.Command)
 	req.queryValues.Add("rp", q.RetentionPolicy)
+	req.queryValues.Add("epoch", q.Precision.String())
 
 	resp, err := c.executeHttpGet(UrlQuery, req)
 	if err != nil {

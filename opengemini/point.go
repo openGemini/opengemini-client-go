@@ -21,17 +21,17 @@ type PrecisionType int
 func (p PrecisionType) String() string {
 	switch p {
 	case PrecisionNanoSecond:
-		return "PrecisionNanoSecond"
+		return "ns"
 	case PrecisionMicrosecond:
-		return "PrecisionMicrosecond"
+		return "u"
 	case PrecisionMillisecond:
-		return "PrecisionMillisecond"
+		return "ms"
 	case PrecisionSecond:
-		return "PrecisionSecond"
+		return "s"
 	case PrecisionMinute:
-		return "PrecisionMinute"
+		return "m"
 	case PrecisionHour:
-		return "PrecisionHour"
+		return "h"
 	}
 	return ""
 }

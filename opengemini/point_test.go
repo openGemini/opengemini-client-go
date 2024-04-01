@@ -71,32 +71,39 @@ func TestPointEncode(t *testing.T) {
 func TestFormatTimestamp(t *testing.T) {
 	testTime := time.Date(2023, 12, 1, 12, 32, 18, 132363612, time.UTC)
 	tests := []struct {
+		caseName  string
 		precision PrecisionType
 		timestamp string
 	}{
 		{
+			caseName:  "PrecisionNanoSecond",
 			precision: PrecisionNanoSecond,
 			timestamp: "1701433938132363612",
 		}, {
+			caseName:  "PrecisionMicrosecond",
 			precision: PrecisionMicrosecond,
 			timestamp: "1701433938132364000",
 		}, {
+			caseName:  "PrecisionMillisecond",
 			precision: PrecisionMillisecond,
 			timestamp: "1701433938132000000",
 		}, {
+			caseName:  "PrecisionSecond",
 			precision: PrecisionSecond,
 			timestamp: "1701433938000000000",
 		}, {
+			caseName:  "PrecisionMinute",
 			precision: PrecisionMinute,
 			timestamp: "1701433920000000000",
 		}, {
+			caseName:  "PrecisionHour",
 			precision: PrecisionHour,
 			timestamp: "1701435600000000000",
 		},
 	}
 	for _, tt := range tests {
 		if strings.Compare(formatTimestamp(testTime, tt.precision), tt.timestamp) != 0 {
-			t.Errorf("parse timestamp error in %v", tt.precision.String())
+			t.Errorf("parse timestamp error in %v", tt.caseName)
 		}
 	}
 }
