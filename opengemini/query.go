@@ -12,6 +12,7 @@ type Query struct {
 	Database        string
 	Command         string
 	RetentionPolicy string
+	Precision       Precision
 }
 
 type keyValue struct {
@@ -27,6 +28,7 @@ func (c *client) Query(q Query) (*QueryResult, error) {
 	req.queryValues.Add("db", q.Database)
 	req.queryValues.Add("q", q.Command)
 	req.queryValues.Add("rp", q.RetentionPolicy)
+	req.queryValues.Add("epoch", q.Precision.Epoch())
 
 	resp, err := c.executeHttpGet(UrlQuery, req)
 	if err != nil {
