@@ -71,7 +71,7 @@ func TestPointEncode(t *testing.T) {
 func TestFormatTimestamp(t *testing.T) {
 	testTime := time.Date(2023, 12, 1, 12, 32, 18, 132363612, time.UTC)
 	tests := []struct {
-		precision PrecisionType
+		precision Precision
 		timestamp string
 	}{
 		{

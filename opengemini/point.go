@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	PrecisionNanoSecond PrecisionType = iota
+	PrecisionNanoSecond Precision = iota
 	PrecisionMicrosecond
 	PrecisionMillisecond
 	PrecisionSecond
@@ -16,9 +16,9 @@ const (
 	PrecisionHour
 )
 
-type PrecisionType int
+type Precision int
 
-func (p PrecisionType) String() string {
+func (p Precision) String() string {
 	switch p {
 	case PrecisionNanoSecond:
 		return "PrecisionNanoSecond"
@@ -39,7 +39,7 @@ func (p PrecisionType) String() string {
 type Point struct {
 	Measurement string
 	// Precision Timestamp precision ,default value is  PrecisionNanoSecond
-	Precision PrecisionType
+	Precision Precision
 	Time      time.Time
 	Tags      map[string]string
 	Fields    map[string]interface{}
@@ -63,7 +63,7 @@ func (p *Point) SetTime(t time.Time) {
 	p.Time = t
 }
 
-func (p *Point) SetPrecision(precision PrecisionType) {
+func (p *Point) SetPrecision(precision Precision) {
 	p.Precision = precision
 }
 
@@ -255,7 +255,7 @@ func (enc *LineProtocolEncoder) BatchEncode(bp *BatchPoints) error {
 	return nil
 }
 
-func formatTimestamp(t time.Time, p PrecisionType) string {
+func formatTimestamp(t time.Time, p Precision) string {
 	switch p {
 	case PrecisionNanoSecond:
 		return strconv.FormatInt(t.UnixNano(), 10)
