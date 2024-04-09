@@ -36,6 +36,24 @@ func (p Precision) String() string {
 	return ""
 }
 
+func (p Precision) Epoch() string {
+	switch p {
+	case PrecisionNanoSecond:
+		return "ns"
+	case PrecisionMicrosecond:
+		return "u"
+	case PrecisionMillisecond:
+		return "ms"
+	case PrecisionSecond:
+		return "s"
+	case PrecisionMinute:
+		return "m"
+	case PrecisionHour:
+		return "h"
+	}
+	return ""
+}
+
 type Point struct {
 	Measurement string
 	// Precision Timestamp precision ,default value is  PrecisionNanoSecond
