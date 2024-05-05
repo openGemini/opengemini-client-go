@@ -1,6 +1,7 @@
 package opengemini
 
 import (
+	"errors"
 	"io"
 	"strconv"
 	"strings"
@@ -198,7 +199,7 @@ func (enc *LineProtocolEncoder) writeFieldValue(v interface{}) error {
 			err = enc.writeByte('F')
 		}
 	default:
-		panic("unsupported field value type")
+		err = errors.New("unsupported field value type")
 	}
 
 	return err
