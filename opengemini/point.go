@@ -90,14 +90,6 @@ func (p *Point) SetMeasurement(name string) {
 	p.Measurement = name
 }
 
-type BatchPoints struct {
-	Points []*Point
-}
-
-func (bp *BatchPoints) AddPoint(p *Point) {
-	bp.Points = append(bp.Points, p)
-}
-
 type LineProtocolEncoder struct {
 	w io.Writer
 }
@@ -259,8 +251,8 @@ func (enc *LineProtocolEncoder) Encode(p *Point) error {
 	return nil
 }
 
-func (enc *LineProtocolEncoder) BatchEncode(bp *BatchPoints) error {
-	for _, p := range bp.Points {
+func (enc *LineProtocolEncoder) BatchEncode(bp []*Point) error {
+	for _, p := range bp {
 		if p == nil {
 			continue
 		}

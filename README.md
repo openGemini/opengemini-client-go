@@ -71,7 +71,7 @@ Write batch points:
 
 ```go
 exampleMeasurement := "ExampleMeasurement"
-bp := &BatchPoints{}
+bp := make([]*Point,10)
 var tagList []string
 tagList = append(tagList, "sunny", "rainy", "windy")
 for i := 0; i < 10; i++ {
@@ -81,7 +81,7 @@ for i := 0; i < 10; i++ {
 	p.AddField("Humidity", rand.Int31n(100))
 	p.AddField("Temperature", rand.Int31n(40))
 	p.SetTime(time.Now())
-	bp.AddPoint(p)
+        bp = append(bp,p)
 	time.Sleep(time.Nanosecond)
 }
 err = client.WriteBatchPoints(exampleDatabase, bp)
