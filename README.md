@@ -57,7 +57,7 @@ point.SetMeasurement(exampleMeasurement)
 point.AddTag("Weather", "foggy")
 point.AddField("Humidity", 87)
 point.AddField("Temperature", 25)
-err = client.WritePoint(exampleDatabase, point, func(err error) {
+err = client.WritePoint(context.Background(),exampleDatabase, point, func(err error) {
 	if err != nil {
 		fmt.Printf("write point failed for %s", err)
 	}
