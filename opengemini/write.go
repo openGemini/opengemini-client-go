@@ -14,7 +14,7 @@ import (
 
 type WriteCallback func(error)
 
-func (c *client) WriteBatchPoints(database string, bp *BatchPoints) error {
+func (c *client) WriteBatchPoints(database string, bp []*Point) error {
 	var buffer bytes.Buffer
 	writer := c.newWriter(&buffer)
 
@@ -108,7 +108,7 @@ func (c *client) WritePoint(ctx context.Context, database string, point *Point, 
 func (c *client) internalBatchSend(ctx context.Context, database string, resource <-chan *sendBatchWithCB) {
 	var tickInterval = c.config.BatchConfig.BatchInterval
 	var ticker = time.NewTicker(tickInterval)
-	var points = new(BatchPoints)
+	var points = make([]*Point, 0, c.config.BatchConfig.BatchSize)
 	var cbs []WriteCallback
 	needFlush := false
 	for {
@@ -119,17 +119,17 @@ func (c *client) internalBatchSend(ctx context.Context, database string, resourc
 		case <-ticker.C:
 			needFlush = true
 		case record := <-resource:
-			points.AddPoint(record.point)
+			points = append(points, record.point)
 			cbs = append(cbs, record.callback)
 		}
-		if len(points.Points) >= c.config.BatchConfig.BatchSize || needFlush {
+		if len(points) >= c.config.BatchConfig.BatchSize || needFlush {
 			err := c.WriteBatchPoints(database, points)
 			for _, callback := range cbs {
 				callback(err)
 			}
 			needFlush = false
 			ticker.Reset(tickInterval)
-			points.Points = []*Point{}
+			points = []*Point{}
 			cbs = []WriteCallback{}
 		}
 	}
