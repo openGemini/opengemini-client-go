@@ -22,7 +22,7 @@ type Client interface {
 	// WritePoint write single point to assigned database
 	WritePoint(ctx context.Context, database string, point *Point, callbackFunc WriteCallback) error
 	// WriteBatchPoints write batch points to assigned database
-	WriteBatchPoints(database string, bp *BatchPoints) error
+	WriteBatchPoints(database string, bp []*Point) error
 	// CreateDatabase Create database
 	CreateDatabase(database string) error
 	// CreateDatabaseWithRp Create database with retention policy

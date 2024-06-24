@@ -22,7 +22,7 @@ func TestClientWriteBatchPoints(t *testing.T) {
 		assert.Nil(t, err)
 	}()
 
-	bp := &BatchPoints{}
+	bp := make([]*Point, 3)
 	testMeasurement := randomMeasurement()
 	// point1 will write success with four kinds variant type field
 	point1 := &Point{}
@@ -32,13 +32,13 @@ func TestClientWriteBatchPoints(t *testing.T) {
 	point1.AddField("intField", 897870)
 	point1.AddField("doubleField", 834.5433)
 	point1.AddField("boolField", true)
-	bp.AddPoint(point1)
+	bp = append(bp, point1)
 
 	// point2 will parse fail for having no field
 	point2 := &Point{}
 	point2.SetMeasurement(testMeasurement)
 	point2.AddTag("Tag", "Test2")
-	bp.AddPoint(point2)
+	bp = append(bp, point2)
 
 	// point3 will write success with timestamp
 	point3 := &Point{}
@@ -47,7 +47,7 @@ func TestClientWriteBatchPoints(t *testing.T) {
 	point3.AddField("stringField", "test3")
 	point3.AddField("boolField", false)
 	point3.Time = time.Now()
-	bp.AddPoint(point3)
+	bp = append(bp, point3)
 
 	err = c.WriteBatchPoints(database, bp)
 	assert.Nil(t, err)
