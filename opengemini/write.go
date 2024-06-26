@@ -129,8 +129,8 @@ func (c *client) internalBatchSend(ctx context.Context, database string, resourc
 			}
 			needFlush = false
 			ticker.Reset(tickInterval)
-			points = []*Point{}
-			cbs = []WriteCallback{}
+			points = points[:0]
+			cbs = cbs[:0]
 		}
 	}
 }
