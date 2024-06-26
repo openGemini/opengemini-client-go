@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 type Query struct {
@@ -30,7 +31,17 @@ func (c *client) Query(q Query) (*QueryResult, error) {
 	req.queryValues.Add("rp", q.RetentionPolicy)
 	req.queryValues.Add("epoch", q.Precision.Epoch())
 
+	// metric
+	c.metrics.queryCounter.Add(1)
+	c.metrics.queryDatabaseCounter.WithLabelValues(q.Database).Add(1)
+	startAt := time.Now()
+
 	resp, err := c.executeHttpGet(UrlQuery, req)
+
+	cost := float64(time.Since(startAt).Milliseconds())
+	c.metrics.queryLatency.Observe(cost)
+	c.metrics.queryDatabaseLatency.WithLabelValues(q.Database).Observe(cost)
+
 	if err != nil {
 		return nil, errors.New("query request failed, error: " + err.Error())
 	}
