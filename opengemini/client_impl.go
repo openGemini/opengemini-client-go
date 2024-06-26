@@ -22,6 +22,7 @@ type client struct {
 	cli       *http.Client
 	prevIdx   atomic.Int32
 	dataChan  sync.Map
+	metrics   *metrics
 
 	cancel context.CancelFunc
 }
@@ -62,6 +63,7 @@ func newClient(c *Config) (Client, error) {
 		config:    c,
 		endpoints: buildEndpoints(c.Addresses, c.TlsEnabled),
 		cli:       newHttpClient(*c),
+		metrics:   newMetricsProvider(),
 		cancel:    cancel,
 	}
 	client.prevIdx.Store(-1)

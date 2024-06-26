@@ -154,5 +154,16 @@ func (c *client) innerWrite(database string, buffer *bytes.Buffer) (*http.Respon
 		req.header.Set("Accept-Encoding", "gzip")
 	}
 	req.queryValues.Add("db", database)
-	return c.executeHttpPost(UrlWrite, req)
+
+	c.metrics.writeCounter.Add(1)
+	c.metrics.writeDatabaseCounter.WithLabelValues(database).Add(1)
+	startAt := time.Now()
+
+	response, err := c.executeHttpPost(UrlWrite, req)
+
+	cost := float64(time.Since(startAt).Milliseconds())
+	c.metrics.writeLatency.Observe(cost)
+	c.metrics.writeDatabaseLatency.WithLabelValues(database).Observe(cost)
+
+	return response, err
 }
