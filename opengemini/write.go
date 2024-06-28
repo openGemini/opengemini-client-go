@@ -87,7 +87,11 @@ func (c *client) WritePoint(ctx context.Context, database string, point *Point, 
 
 	resp, err := c.innerWrite(database, &buffer)
 	if err != nil {
-		callback(errors.New("innerWrite request failed, error: " + err.Error()))
+		err := errors.New("innerWrite request failed, error: " + err.Error())
+		if callback != nil {
+			callback(err)
+		}
+		return nil
 	}
 
 	defer resp.Body.Close()
