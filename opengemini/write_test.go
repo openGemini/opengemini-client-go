@@ -63,6 +63,71 @@ func TestClientWriteBatchPoints(t *testing.T) {
 	assert.Equal(t, 2, len(result.Results[0].Series[0].Values))
 }
 
+func TestClient_WriteBatchPointsWithRetentionPolicy(t *testing.T) {
+	c := testDefaultClient(t)
+
+	// create a test database with rand suffix
+	database := randomDatabaseName()
+	err := c.CreateDatabase(database)
+	assert.Nil(t, err)
+	err = c.CreateRetentionPolicy(database, RpConfig{Name: "testRp", Duration: "3d", ShardGroupDuration: "1h", IndexDuration: "7h"}, false)
+	assert.Nil(t, err)
+
+	// delete test database before exit test case
+	defer func() {
+		err := c.DropDatabase(database)
+		assert.Nil(t, err)
+	}()
+
+	bp := make([]*Point, 3)
+	testMeasurement := randomMeasurement()
+	// point1 will write success with four kinds variant type field
+	point1 := &Point{}
+	point1.SetMeasurement(testMeasurement)
+	point1.AddTag("Tag", "Test1")
+	point1.AddField("stringField", "test1")
+	point1.AddField("intField", 897870)
+	point1.AddField("doubleField", 834.5433)
+	point1.AddField("boolField", true)
+	bp = append(bp, point1)
+
+	// point2 will parse fail for having no field
+	point2 := &Point{}
+	point2.SetMeasurement(testMeasurement)
+	point2.AddTag("Tag", "Test2")
+	bp = append(bp, point2)
+
+	// point3 will write success with timestamp
+	point3 := &Point{}
+	point3.SetMeasurement(testMeasurement)
+	point3.AddTag("Tag", "Test3")
+	point3.AddField("stringField", "test3")
+	point3.AddField("boolField", false)
+	point3.Time = time.Now()
+	bp = append(bp, point3)
+
+	err = c.WriteBatchPointsWithRp(database, "testRp", bp)
+	assert.Nil(t, err)
+
+	time.Sleep(time.Second * 5)
+	// check whether write success
+	res, err := c.Query(Query{
+		Database: database,
+		Command:  "select * from " + testMeasurement,
+	})
+	assert.Nil(t, err)
+	assert.Contains(t, res.Results[0].Error, "measurement not found")
+
+	res, err = c.Query(Query{
+		Database:        database,
+		Command:         "select * from " + testMeasurement,
+		RetentionPolicy: "testRp",
+	})
+	assert.Nil(t, err)
+	fmt.Printf("%#v", res.Results[0].Series[0].Values)
+	assert.Equal(t, 2, len(res.Results[0].Series[0].Values))
+}
+
 func TestClientWritePoint(t *testing.T) {
 	c := testDefaultClient(t)
 
@@ -85,6 +150,48 @@ func TestClientWritePoint(t *testing.T) {
 	point.AddTag("tag", "test")
 	point.AddField("field", "test")
 	err = c.WritePoint(context.Background(), database, point, callback)
+	assert.Nil(t, err)
+}
+
+func TestClientWritePointWithRetentionPolicy(t *testing.T) {
+	c := testDefaultClient(t)
+
+	// create a test database with rand suffix
+	database := randomDatabaseName()
+	err := c.CreateDatabase(database)
+	assert.Nil(t, err)
+	err = c.CreateRetentionPolicy(database, RpConfig{Name: "testRp", Duration: "3d", ShardGroupDuration: "1h", IndexDuration: "7h"}, false)
+	assert.Nil(t, err)
+
+	// delete test database before exit test case
+	defer func() {
+		err := c.DropDatabase(database)
+		assert.Nil(t, err)
+	}()
+
+	callback := func(err error) {
+		assert.Nil(t, err)
+	}
+	point := &Point{}
+	point.Measurement = randomMeasurement()
+	point.AddTag("tag", "test")
+	point.AddField("field", "test")
+	err = c.WritePointWithRp(context.Background(), database, "testRp", point, callback)
+	assert.Nil(t, err)
+	time.Sleep(time.Second * 3)
+	res, err := c.Query(Query{
+		Database: database,
+		Command:  "select * from " + point.Measurement,
+	})
+	assert.Nil(t, err)
+	assert.Contains(t, res.Results[0].Error, "measurement not found")
+
+	res, err = c.Query(Query{
+		Database:        database,
+		Command:         "select * from " + point.Measurement,
+		RetentionPolicy: "testRp",
+	})
+	assert.NotNil(t, res.Results[0].Series[0].Values)
 	assert.Nil(t, err)
 }
 

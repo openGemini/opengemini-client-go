@@ -15,34 +15,11 @@ import (
 type WriteCallback func(error)
 
 func (c *client) WriteBatchPoints(database string, bp []*Point) error {
-	var buffer bytes.Buffer
-	writer := c.newWriter(&buffer)
+	return c.WriteBatchPointsWithRp(database, "", bp)
+}
 
-	enc := NewLineProtocolEncoder(writer)
-	if err := enc.BatchEncode(bp); err != nil {
-		return errors.New("batchEncode failed, error: " + err.Error())
-	}
-
-	if closer, ok := writer.(io.Closer); ok {
-		if err := closer.Close(); err != nil {
-			return errors.New("writer close failed, error: " + err.Error())
-		}
-	}
-
-	resp, err := c.innerWrite(database, &buffer)
-	if err != nil {
-		return errors.New("innerWrite request failed, error: " + err.Error())
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusNoContent {
-		errorBody, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return errors.New("writeBatchPoint read resp body failed, error: " + err.Error())
-		}
-		return errors.New("writeBatchPoint error resp, code: " + resp.Status + "body: " + string(errorBody))
-	}
-	return nil
+func (c *client) WritePoint(ctx context.Context, database string, point *Point, callback WriteCallback) error {
+	return c.WritePointWithRp(ctx, database, "", point, callback)
 }
 
 type sendBatchWithCB struct {
@@ -50,16 +27,21 @@ type sendBatchWithCB struct {
 	callback WriteCallback
 }
 
-func (c *client) WritePoint(ctx context.Context, database string, point *Point, callback WriteCallback) error {
+type dbRp struct {
+	db string
+	rp string
+}
+
+func (c *client) WritePointWithRp(ctx context.Context, database string, rp string, point *Point, callback WriteCallback) error {
 	if c.config.BatchConfig != nil {
-		value, ok := c.dataChan.Load(database)
+		value, ok := c.dataChan.Load(dbRp{db: database, rp: rp})
 		if !ok {
 			newCollection := make(chan *sendBatchWithCB, c.config.BatchConfig.BatchSize*2)
 			actual, loaded := c.dataChan.LoadOrStore(database, newCollection)
 			if loaded {
 				close(newCollection)
 			} else {
-				go c.internalBatchSend(ctx, database, actual.(chan *sendBatchWithCB))
+				go c.internalBatchSend(ctx, database, rp, actual.(chan *sendBatchWithCB))
 			}
 			value = actual
 		}
@@ -85,12 +67,9 @@ func (c *client) WritePoint(ctx context.Context, database string, point *Point, 
 		}
 	}
 
-	resp, err := c.innerWrite(database, &buffer)
+	resp, err := c.innerWrite(database, rp, &buffer)
 	if err != nil {
-		err := errors.New("innerWrite request failed, error: " + err.Error())
-		if callback != nil {
-			callback(err)
-		}
+		callback(errors.New("innerWrite request failed, error: " + err.Error()))
 		return nil
 	}
 
@@ -109,7 +88,38 @@ func (c *client) WritePoint(ctx context.Context, database string, point *Point, 
 	return nil
 }
 
-func (c *client) internalBatchSend(ctx context.Context, database string, resource <-chan *sendBatchWithCB) {
+func (c *client) WriteBatchPointsWithRp(database string, rp string, bp []*Point) error {
+	var buffer bytes.Buffer
+	writer := c.newWriter(&buffer)
+
+	enc := NewLineProtocolEncoder(writer)
+	if err := enc.BatchEncode(bp); err != nil {
+		return errors.New("batchEncode failed, error: " + err.Error())
+	}
+
+	if closer, ok := writer.(io.Closer); ok {
+		if err := closer.Close(); err != nil {
+			return errors.New("writer close failed, error: " + err.Error())
+		}
+	}
+
+	resp, err := c.innerWrite(database, rp, &buffer)
+	if err != nil {
+		return errors.New("innerWrite request failed, error: " + err.Error())
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusNoContent {
+		errorBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return errors.New("writeBatchPoint read resp body failed, error: " + err.Error())
+		}
+		return errors.New("writeBatchPoint error resp, code: " + resp.Status + "body: " + string(errorBody))
+	}
+	return nil
+}
+
+func (c *client) internalBatchSend(ctx context.Context, database string, rp string, resource <-chan *sendBatchWithCB) {
 	var tickInterval = c.config.BatchConfig.BatchInterval
 	var ticker = time.NewTicker(tickInterval)
 	var points = make([]*Point, 0, c.config.BatchConfig.BatchSize)
@@ -127,7 +137,7 @@ func (c *client) internalBatchSend(ctx context.Context, database string, resourc
 			cbs = append(cbs, record.callback)
 		}
 		if len(points) >= c.config.BatchConfig.BatchSize || needFlush {
-			err := c.WriteBatchPoints(database, points)
+			err := c.WriteBatchPointsWithRp(database, rp, points)
 			for _, callback := range cbs {
 				callback(err)
 			}
@@ -147,7 +157,7 @@ func (c *client) newWriter(buffer *bytes.Buffer) io.Writer {
 	}
 }
 
-func (c *client) innerWrite(database string, buffer *bytes.Buffer) (*http.Response, error) {
+func (c *client) innerWrite(database string, rp string, buffer *bytes.Buffer) (*http.Response, error) {
 	req := requestDetails{
 		queryValues: make(url.Values),
 		body:        buffer,
@@ -158,6 +168,7 @@ func (c *client) innerWrite(database string, buffer *bytes.Buffer) (*http.Respon
 		req.header.Set("Accept-Encoding", "gzip")
 	}
 	req.queryValues.Add("db", database)
+	req.queryValues.Add("rp", rp)
 
 	c.metrics.writeCounter.Add(1)
 	c.metrics.writeDatabaseCounter.WithLabelValues(database).Add(1)
