@@ -75,7 +75,7 @@ func TestFormatTimestamp(t *testing.T) {
 		timestamp string
 	}{
 		{
-			precision: PrecisionNanoSecond,
+			precision: PrecisionNanosecond,
 			timestamp: "1701433938132363612",
 		}, {
 			precision: PrecisionMicrosecond,

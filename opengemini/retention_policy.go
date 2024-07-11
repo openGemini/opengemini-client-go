@@ -48,7 +48,7 @@ func (c *client) CreateRetentionPolicy(database string, rpConfig RpConfig, isDef
 	return nil
 }
 
-// ShowRetentionPolicy Show retention policy
+// ShowRetentionPolicies Show retention policy
 func (c *client) ShowRetentionPolicies(database string) ([]RetentionPolicy, error) {
 	var (
 		ShowRetentionPolicy = "SHOW RETENTION POLICIES"
