@@ -124,7 +124,7 @@ func TestClient_WriteBatchPointsWithRetentionPolicy(t *testing.T) {
 		RetentionPolicy: "testRp",
 	})
 	assert.Nil(t, err)
-	fmt.Printf("%#v", res.Results[0].Series[0].Values)
+	t.Logf("%#v", res.Results[0].Series[0].Values)
 	assert.Equal(t, 2, len(res.Results[0].Series[0].Values))
 }
 
@@ -255,7 +255,7 @@ func TestWriteWithBatchInterval(t *testing.T) {
 		assert.Nil(t, err)
 	}()
 
-	//TestBatchInterval
+	// TestBatchInterval
 	point := &Point{}
 	point.SetMeasurement("test")
 	point.AddField("field", "interval")
