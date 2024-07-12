@@ -113,6 +113,10 @@ func newMetricsProvider() *metrics {
 		}, labelNames),
 	}
 
-	prometheus.MustRegister(m)
 	return m
+}
+
+// ExposeMetrics expose prometheus metrics
+func (c *client) ExposeMetrics() prometheus.Collector {
+	return c.metrics
 }

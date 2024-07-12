@@ -3,6 +3,7 @@ package opengemini
 import (
 	"context"
 	"crypto/tls"
+	"github.com/prometheus/client_golang/prometheus"
 	"time"
 )
 
@@ -52,6 +53,9 @@ type Client interface {
 
 	// Close shut down resources, such as health check tasks
 	Close() error
+
+	// ExposeMetrics expose prometheus metrics, calling prometheus.MustRegister(metrics) to register
+	ExposeMetrics() prometheus.Collector
 }
 
 // Config is used to construct a openGemini Client instance.
