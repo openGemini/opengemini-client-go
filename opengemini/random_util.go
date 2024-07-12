@@ -1,28 +1,30 @@
 package opengemini
 
 import (
-	"math/rand"
-	"time"
+	"crypto/rand"
+	"math/big"
 )
-
-func init() {
-	rand.New(rand.NewSource(time.Now().UnixNano()))
-}
 
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 func RandBytes(n int64) []byte {
+	if n <= 0 {
+		return []byte{}
+	}
 	b := make([]byte, n)
 	for i := range b {
-		b[i] = letters[rand.Int63()%int64(len(letters))]
+		index, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
+		if err != nil {
+			panic(err)
+		}
+		b[i] = letters[index.Int64()]
 	}
 	return b
 }
 
 func RandStr(n int64) string {
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letters[rand.Int63()%int64(len(letters))]
+	if n <= 0 {
+		return ""
 	}
-	return string(b)
+	return string(RandBytes(n))
 }
