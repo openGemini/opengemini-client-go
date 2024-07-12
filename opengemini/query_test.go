@@ -35,7 +35,7 @@ func TestQueryWithEpoch(t *testing.T) {
 	time.Sleep(time.Second * 5)
 
 	PrecisionTimestampLength := make(map[Precision]int64)
-	PrecisionTimestampLength[PrecisionNanoSecond] = 19
+	PrecisionTimestampLength[PrecisionNanosecond] = 19
 	PrecisionTimestampLength[PrecisionMicrosecond] = 16
 	PrecisionTimestampLength[PrecisionMillisecond] = 13
 	PrecisionTimestampLength[PrecisionSecond] = 10
