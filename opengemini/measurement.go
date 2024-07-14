@@ -64,10 +64,11 @@ func (c *client) ShowSeries(database, command string) ([]string, error) {
 		return []string{}, nil
 	}
 	for _, v := range seriesResult[0].Values {
-		if _, ok := v.(string); !ok {
+		strV, ok := v.(string)
+		if !ok {
 			return series, nil
 		}
-		series = append(series, v.(string))
+		series = append(series, strV)
 	}
 	return series, nil
 }
