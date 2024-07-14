@@ -110,10 +110,11 @@ func (c *client) showTagSeriesQuery(database, command string) ([]ValuesResult, e
 		tagSeriesRes.Measurement = res.Name
 		for _, valRes := range res.Values {
 			for _, value := range valRes {
-				if _, ok := value.(string); !ok {
+				strVal, ok := value.(string)
+				if !ok {
 					return tagSeries, nil
 				}
-				tagSeriesRes.Values = append(tagSeriesRes.Values, value.(string))
+				tagSeriesRes.Values = append(tagSeriesRes.Values, strVal)
 			}
 		}
 		tagSeries = append(tagSeries, *tagSeriesRes)
@@ -143,11 +144,11 @@ func (c *client) showTagFieldQuery(database, command string) ([]ValuesResult, er
 			if len(valRes) < 2 {
 				return tagValueResult, nil
 			}
-			if _, ok := valRes[0].(string); ok {
-				tagValue.Name = valRes[0].(string)
+			if strVal, ok := valRes[0].(string); ok {
+				tagValue.Name = strVal
 			}
-			if _, ok := valRes[1].(string); ok {
-				tagValue.Value = valRes[1].(string)
+			if strVal, ok := valRes[1].(string); ok {
+				tagValue.Value = strVal
 			}
 			tagValueRes.Values = append(tagValueRes.Values, *tagValue)
 		}
