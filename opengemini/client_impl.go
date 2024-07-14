@@ -24,6 +24,7 @@ type client struct {
 	dataChan  sync.Map
 	metrics   *metrics
 
+	ctx    context.Context
 	cancel context.CancelFunc
 }
 
@@ -64,6 +65,7 @@ func newClient(c *Config) (Client, error) {
 		endpoints: buildEndpoints(c.Addresses, c.TlsEnabled),
 		cli:       newHttpClient(*c),
 		metrics:   newMetricsProvider(),
+		ctx:       ctx,
 		cancel:    cancel,
 	}
 	client.prevIdx.Store(-1)

@@ -77,7 +77,7 @@ func (c *client) executeHttpRequestInner(method, serverUrl, urlPath string, deta
 		u.RawQuery = details.queryValues.Encode()
 	}
 
-	req, err := http.NewRequest(method, u.String(), details.body)
+	req, err := http.NewRequestWithContext(c.ctx, method, u.String(), details.body)
 	if err != nil {
 		return nil, err
 	}
