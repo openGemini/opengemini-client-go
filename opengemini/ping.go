@@ -12,6 +12,9 @@ func (c *client) Ping(idx int) error {
 	if err != nil {
 		return errors.New("ping request failed, error: " + err.Error())
 	}
+
+	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusNoContent {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
