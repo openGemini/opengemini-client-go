@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var allServersDown = errors.New("all servers down")
+var ErrAllServersDown = errors.New("all servers down")
 
 const (
 	healthCheckPeriod = time.Second * 10
@@ -55,5 +55,5 @@ func (c *client) getServerUrl() (string, error) {
 		}
 		return c.endpoints[idx].url, nil
 	}
-	return "", allServersDown
+	return "", ErrAllServersDown
 }

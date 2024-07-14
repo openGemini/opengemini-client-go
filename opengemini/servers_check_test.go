@@ -88,7 +88,7 @@ func TestServerCheck(t *testing.T) {
 
 	time.Sleep(time.Second * 15)
 	_, err = cli.getServerUrl()
-	assert.Equal(t, allServersDown, err)
+	assert.Equal(t, ErrAllServersDown, err)
 
 	err = cli.Close()
 	assert.NoError(t, err)
