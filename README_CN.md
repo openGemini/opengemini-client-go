@@ -6,6 +6,8 @@ opengemini-client-go 是一个用 Go 语言编写的 OpenGemini 客户端。
 
 OpenGemini 是华为云开源的一款云原生分布式时序数据库，获取更多关于 OpenGemini 的信息可点击 https://github.com/openGemini/openGemini
 
+查看OpenGemini客户端设计文档，可点击 https://github.com/openGemini/openGemini.github.io/blob/main/src/zh/guide/develop/client_design.md
+
 ## 要求
 
 - Go 1.19
