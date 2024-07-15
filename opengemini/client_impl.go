@@ -59,16 +59,16 @@ func newClient(c *Config) (Client, error) {
 		c.ConnectTimeout = 10 * time.Second
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	client := &client{
+	dbClient := &client{
 		config:    c,
 		endpoints: buildEndpoints(c.Addresses, c.TlsEnabled),
 		cli:       newHttpClient(*c),
 		metrics:   newMetricsProvider(),
 		cancel:    cancel,
 	}
-	client.prevIdx.Store(-1)
-	go client.endpointsCheck(ctx)
-	return client, nil
+	dbClient.prevIdx.Store(-1)
+	go dbClient.endpointsCheck(ctx)
+	return dbClient, nil
 }
 
 func (c *client) Close() error {
