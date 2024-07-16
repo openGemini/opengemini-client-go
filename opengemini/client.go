@@ -71,6 +71,13 @@ type Config struct {
 	Timeout time.Duration
 	// ConnectTimeout default 10s
 	ConnectTimeout time.Duration
+	// MaxConnsPerHost optionally limits the total number of
+	// connections per host. Zero means no limit. Default is 0
+	MaxConnsPerHost int
+	// MaxIdleConnsPerHost, if non-zero, controls the maximum idle
+	// (keep-alive) connections to keep per-host. If zero,
+	// DefaultMaxIdleConnsPerHost is used.
+	MaxIdleConnsPerHost int
 	// GzipEnabled determines whether to use gzip for data transmission.
 	GzipEnabled bool
 	// TlsEnabled determines whether to use TLS for data transmission.
