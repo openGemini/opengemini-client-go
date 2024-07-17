@@ -44,8 +44,14 @@ type Client interface {
 	ShowRetentionPolicies(database string) ([]RetentionPolicy, error)
 	DropRetentionPolicy(database, retentionPolicy string) error
 
+	// ShowTagKeys get key field names from a database, return []{"Measurement":"XXX","Values":[]string{"TAG1"}}
+	// command such as: show tag keys | show tag keys from MEASUREMENT_NAME | show tag keys from MEASUREMENT_NAME limit N offset M
 	ShowTagKeys(database, command string) ([]ValuesResult, error)
+	// ShowTagValues get key field values from a measurement, return []{"Measurement":"XXX","Values":[]string{"tagName", "tagValue"}}
+	// command such as: show tag values from MEASUREMENT_NAME with key = "TAG_NAME"
 	ShowTagValues(database, command string) ([]ValuesResult, error)
+	// ShowFieldKeys get field key names from a database, return []{"Measurement":"XXX","Values":[]string{"fieldName", "fieldType"}}
+	// command such as: show field keys | show field keys from MEASUREMENT_NAME
 	ShowFieldKeys(database, command string) ([]ValuesResult, error)
 	// ShowSeries returns the series of specified databases
 	// return [measurement1,tag1=value1 measurement2,tag2=value2]

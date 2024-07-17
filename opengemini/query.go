@@ -91,20 +91,19 @@ func (c *client) queryPost(q Query) (*QueryResult, error) {
 }
 
 func (c *client) showTagSeriesQuery(database, command string) ([]ValuesResult, error) {
-	tagSeries := make([]ValuesResult, 0)
 	tagSeriesResult, err := c.Query(Query{Database: database, Command: command})
 	if err != nil {
-		return tagSeries, err
+		return nil, err
 	}
-
 	err = tagSeriesResult.hasError()
 	if err != nil {
-		return tagSeries, fmt.Errorf("get tagSeriesResult failed, error: %s", err)
+		return nil, fmt.Errorf("get tagSeriesResult failed, error: %s", err)
 	}
 	if len(tagSeriesResult.Results) == 0 {
-		return tagSeries, nil
+		return []ValuesResult{}, nil
 	}
 
+	tagSeries := make([]ValuesResult, 0, len(tagSeriesResult.Results[0].Series))
 	for _, res := range tagSeriesResult.Results[0].Series {
 		tagSeriesRes := new(ValuesResult)
 		tagSeriesRes.Measurement = res.Name
@@ -112,7 +111,7 @@ func (c *client) showTagSeriesQuery(database, command string) ([]ValuesResult, e
 			for _, value := range valRes {
 				strVal, ok := value.(string)
 				if !ok {
-					return tagSeries, nil
+					return []ValuesResult{}, errors.New("value is not string")
 				}
 				tagSeriesRes.Values = append(tagSeriesRes.Values, strVal)
 			}
@@ -142,7 +141,7 @@ func (c *client) showTagFieldQuery(database, command string) ([]ValuesResult, er
 		for _, valRes := range res.Values {
 			tagValue := new(keyValue)
 			if len(valRes) < 2 {
-				return tagValueResult, nil
+				return nil, errors.New("invalid tag value format")
 			}
 			if strVal, ok := valRes[0].(string); ok {
 				tagValue.Name = strVal
