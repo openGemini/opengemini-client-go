@@ -83,7 +83,7 @@ func buildEndpoints(addresses []*Address, tlsEnabled bool) []endpoint {
 		protocol = "https://"
 	}
 	for i, addr := range addresses {
-		urls[i] = endpoint{url: protocol + addr.Host + ":" + strconv.Itoa(addr.Port)}
+		urls[i] = endpoint{url: protocol + net.JoinHostPort(addr.Host, strconv.Itoa(addr.Port))}
 	}
 	return urls
 }
