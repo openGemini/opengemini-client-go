@@ -1,16 +1,22 @@
 # opengemini-client-go
 
-opengemini-client-go is a Go client for OpenGemini. 
+English | [简体中文](README_CN.md)
 
-English | [简体中文](README_CN.md) 
+![License](https://img.shields.io/badge/license-Apache2.0-green) ![Language](https://img.shields.io/badge/Language-Go-blue.svg) [![version](https://img.shields.io/github/v/tag/opengemini/opengemini-client-go?label=release&color=blue)](https://github.com/opengemini/opengemini-client-go/releases) [![Godoc](http://img.shields.io/badge/docs-go.dev-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/openGemini/opengemini-client-go)
 
-OpenGemini is an open-source time series database, find more about OpenGemini at https://github.com/openGemini/openGemini
+`opengemini-client-go` is a Golang client for OpenGemini.
 
-Find OpenGemini Client design doc at https://github.com/openGemini/openGemini.github.io/blob/main/src/guide/develop/client_design.md
+## Design Doc
+
+[OpenGemini Client Design Doc](https://github.com/openGemini/openGemini.github.io/blob/main/src/guide/develop/client_design.md)
+
+## About OpenGemini
+
+OpenGemini is a cloud-native distributed time series database, find more information [here](https://github.com/openGemini/openGemini)
 
 ## Requirements
 
-- Go 1.19
+- Go 1.19+
 
 ## Usage
 
