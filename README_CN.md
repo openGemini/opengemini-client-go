@@ -1,16 +1,22 @@
 # opengemini-client-go
 
-opengemini-client-go 是一个用 Go 语言编写的 OpenGemini 客户端。
+![License](https://img.shields.io/badge/license-Apache2.0-green) ![Language](https://img.shields.io/badge/Language-Go-blue.svg) [![version](https://img.shields.io/github/v/tag/opengemini/opengemini-client-go?label=release&color=blue)](https://github.com/opengemini/opengemini-client-go/releases) [![Godoc](http://img.shields.io/badge/docs-go.dev-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/openGemini/opengemini-client-go)
 
-简体中文 | [English](README.md)
+[English](README.md) | 简体中文 
 
-OpenGemini 是华为云开源的一款云原生分布式时序数据库，获取更多关于 OpenGemini 的信息可点击 https://github.com/openGemini/openGemini
+`opengemini-client-go` 是一个用 Go 语言编写的 OpenGemini 客户端。
 
-查看OpenGemini客户端设计文档，可点击 https://github.com/openGemini/openGemini.github.io/blob/main/src/zh/guide/develop/client_design.md
+## 设计文档
+
+[OpenGemini Client 设计文档](https://github.com/openGemini/openGemini.github.io/blob/main/src/zh/guide/develop/client_design.md)
+
+## 关于 OpenGemini
+
+OpenGemini 是一款云原生分布式时序数据库。获取更多信息，请点击[这里](https://github.com/openGemini/openGemini)。
 
 ## 要求
 
-- Go 1.19
+- Go 1.19+
 
 ## 用法
 
