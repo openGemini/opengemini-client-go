@@ -52,7 +52,6 @@ func (c *client) ShowFieldKeys(database, command string) ([]ValuesResult, error)
 }
 
 func (c *client) ShowSeries(database, command string) ([]string, error) {
-	var series = make([]string, 0)
 	if len(database) == 0 {
 		return nil, errors.New("empty database name")
 	}
@@ -63,6 +62,7 @@ func (c *client) ShowSeries(database, command string) ([]string, error) {
 	if len(seriesResult) == 0 {
 		return []string{}, nil
 	}
+	var series = make([]string, 0, len(seriesResult[0].Values))
 	for _, v := range seriesResult[0].Values {
 		strV, ok := v.(string)
 		if !ok {
