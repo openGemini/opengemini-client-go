@@ -91,7 +91,7 @@ func (c *client) queryPost(q Query) (*QueryResult, error) {
 }
 
 func (c *client) showTagSeriesQuery(database, command string) ([]ValuesResult, error) {
-	tagSeries := make([]ValuesResult, 0)
+	var tagSeries []ValuesResult
 	tagSeriesResult, err := c.Query(Query{Database: database, Command: command})
 	if err != nil {
 		return tagSeries, err
@@ -104,8 +104,9 @@ func (c *client) showTagSeriesQuery(database, command string) ([]ValuesResult, e
 	if len(tagSeriesResult.Results) == 0 {
 		return tagSeries, nil
 	}
-
-	for _, res := range tagSeriesResult.Results[0].Series {
+	values := tagSeriesResult.Results[0].Series
+	tagSeries = make([]ValuesResult, 0, len(values))
+	for _, res := range values {
 		tagSeriesRes := new(ValuesResult)
 		tagSeriesRes.Measurement = res.Name
 		for _, valRes := range res.Values {
@@ -123,7 +124,7 @@ func (c *client) showTagSeriesQuery(database, command string) ([]ValuesResult, e
 }
 
 func (c *client) showTagFieldQuery(database, command string) ([]ValuesResult, error) {
-	tagValueResult := make([]ValuesResult, 0)
+	var tagValueResult []ValuesResult
 	tagKeyResult, err := c.Query(Query{Database: database, Command: command})
 	if err != nil {
 		return tagValueResult, err
@@ -137,12 +138,14 @@ func (c *client) showTagFieldQuery(database, command string) ([]ValuesResult, er
 		return tagValueResult, nil
 	}
 
-	for _, res := range tagKeyResult.Results[0].Series {
+	values := tagKeyResult.Results[0].Series
+	tagValueResult = make([]ValuesResult, 0, len(values))
+	for _, res := range values {
 		tagValueRes := new(ValuesResult)
 		for _, valRes := range res.Values {
 			tagValue := new(keyValue)
 			if len(valRes) < 2 {
-				return tagValueResult, nil
+				return []ValuesResult{}, fmt.Errorf("invalid values: %s", valRes)
 			}
 			if strVal, ok := valRes[0].(string); ok {
 				tagValue.Name = strVal
