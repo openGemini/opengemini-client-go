@@ -53,10 +53,7 @@ func (c *client) CreateDatabaseWithRp(database string, rpConfig RpConfig) error 
 }
 
 func (c *client) ShowDatabases() ([]string, error) {
-	var (
-		ShowDatabases = "SHOW DATABASES"
-		dbResult      = make([]string, 0)
-	)
+	var ShowDatabases = "SHOW DATABASES"
 	queryResult, err := c.Query(Query{Command: ShowDatabases})
 	if err != nil {
 		return nil, err
@@ -65,10 +62,14 @@ func (c *client) ShowDatabases() ([]string, error) {
 		return nil, fmt.Errorf("show datababse err: %s", queryResult.Error)
 	}
 	if len(queryResult.Results) == 0 || len(queryResult.Results[0].Series) == 0 {
-		return dbResult, nil
+		return []string{}, nil
 	}
+	var (
+		values   = queryResult.Results[0].Series[0].Values
+		dbResult = make([]string, 0, len(values))
+	)
 
-	for _, v := range queryResult.Results[0].Series[0].Values {
+	for _, v := range values {
 		if len(v) == 0 {
 			continue
 		}

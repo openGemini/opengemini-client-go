@@ -2,6 +2,8 @@ package opengemini
 
 import "errors"
 
+const RpColumnLen = 8
+
 // SeriesResult contains the results of a series query
 type SeriesResult struct {
 	Series []*Series `json:"series,omitempty"`
@@ -24,4 +26,25 @@ func (result *QueryResult) hasError() error {
 		}
 	}
 	return nil
+}
+
+func (result *QueryResult) convertRetentionPolicy() []RetentionPolicy {
+	if len(result.Results) == 0 || len(result.Results[0].Series) == 0 {
+		return []RetentionPolicy{}
+	}
+	var (
+		seriesValues    = result.Results[0].Series[0].Values
+		retentionPolicy = make([]RetentionPolicy, 0, len(seriesValues))
+	)
+
+	for _, v := range seriesValues {
+		if len(v) < RpColumnLen {
+			break
+		}
+		if rp := NewRetentionPolicy(v); rp != nil {
+			retentionPolicy = append(retentionPolicy, *rp)
+		}
+	}
+	return retentionPolicy
+
 }

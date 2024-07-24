@@ -19,7 +19,7 @@ func TestClientShowTagKeys(t *testing.T) {
 	showKeyCmd := fmt.Sprintf("SHOW TAG KEYS FROM %s limit 3 OFFSET 0", measurement)
 	tagKeyResult, err := c.ShowTagKeys(databaseName, showKeyCmd)
 	assert.Nil(t, err)
-	assert.Equal(t, len(tagKeyResult), 1)
+	assert.Equal(t, 1, len(tagKeyResult))
 	err = c.DropDatabase(databaseName)
 	require.Nil(t, err)
 }
@@ -35,7 +35,7 @@ func TestClient_ShowFieldKeys(t *testing.T) {
 	assert.Nil(t, err)
 	tagFieldResult, err := c.ShowFieldKeys(databaseName, fmt.Sprintf("SHOW FIELD KEYS FROM %s", measurement))
 	assert.Nil(t, err)
-	assert.Equal(t, len(tagFieldResult), 1)
+	assert.Equal(t, 1, len(tagFieldResult))
 	err = c.DropDatabase(databaseName)
 	require.Nil(t, err)
 }
