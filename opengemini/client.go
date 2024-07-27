@@ -44,9 +44,15 @@ type Client interface {
 	ShowRetentionPolicies(database string) ([]RetentionPolicy, error)
 	DropRetentionPolicy(database, retentionPolicy string) error
 
-	ShowTagKeys(database, command string) ([]ValuesResult, error)
-	ShowTagValues(database, command string) ([]ValuesResult, error)
-	ShowFieldKeys(database, command string) ([]ValuesResult, error)
+	// ShowTagKeys enumerate all possible results of tag, return {"measurement_name":["TAG1","TAG2"]}
+	// the best way to set builder from NewTagKeysBuilder
+	ShowTagKeys(database string, builder TagKeysBuilder) (map[string][]string, error)
+	// ShowTagValues enumerate all value of a tag key , return ["TAG1","TAG2"]
+	// the best way to set builder from NewTagValuesBuilder
+	ShowTagValues(database string, builder TagValuesBuilder) ([]string, error)
+	// ShowFieldKeys get measurement schema, return {"measurement_name": {"field_name":"field_type"}}
+	// the best way to set builder from NewFieldKeysBuilder
+	ShowFieldKeys(database string, builder FieldKeysBuilder) (map[string]map[string]string, error)
 	// ShowSeries returns the series of specified databases
 	// return [measurement1,tag1=value1 measurement2,tag2=value2]
 	ShowSeries(database, command string) ([]string, error)

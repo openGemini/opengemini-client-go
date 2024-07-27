@@ -2,7 +2,6 @@ package opengemini
 
 import (
 	"context"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -219,16 +218,19 @@ func TestWriteAssignedIntegerField(t *testing.T) {
 	point.AddField("field", 123)
 	err = c.WritePoint(context.Background(), database, point, callback)
 	assert.Nil(t, err)
-
 	time.Sleep(time.Second * 5)
 
 	// check field's data type
-	res, err := c.ShowFieldKeys(database, fmt.Sprintf("SHOW FIELD KEYS FROM %s", measurement))
+	cmd := NewFieldKeysBuilder().Measurement(measurement)
+	res, err := c.ShowFieldKeys(database, cmd)
 	assert.Nil(t, err)
-	if value, ok := res[0].Values[0].(keyValue); !ok {
+	schema, ok := res[measurement]
+	assert.True(t, ok)
+
+	if value, ok := schema["field"]; !ok {
 		t.Fail()
 	} else {
-		assert.Equal(t, "integer", value.Value)
+		assert.Equal(t, "integer", value)
 	}
 }
 

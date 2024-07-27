@@ -16,11 +16,6 @@ type Query struct {
 	Precision       Precision
 }
 
-type keyValue struct {
-	Name  string
-	Value string
-}
-
 // Query sends a command to the server
 func (c *client) Query(q Query) (*QueryResult, error) {
 	req := requestDetails{
@@ -121,43 +116,4 @@ func (c *client) showTagSeriesQuery(database, command string) ([]ValuesResult, e
 		tagSeries = append(tagSeries, *tagSeriesRes)
 	}
 	return tagSeries, nil
-}
-
-func (c *client) showTagFieldQuery(database, command string) ([]ValuesResult, error) {
-	var tagValueResult []ValuesResult
-	tagKeyResult, err := c.Query(Query{Database: database, Command: command})
-	if err != nil {
-		return tagValueResult, err
-	}
-
-	err = tagKeyResult.hasError()
-	if err != nil {
-		return tagValueResult, fmt.Errorf("get tagKeyResult failed, error: %s", err)
-	}
-	if len(tagKeyResult.Results) == 0 {
-		return tagValueResult, nil
-	}
-
-	values := tagKeyResult.Results[0].Series
-	tagValueResult = make([]ValuesResult, 0, len(values))
-	for _, res := range values {
-		tagValueRes := new(ValuesResult)
-		for _, valRes := range res.Values {
-			tagValue := new(keyValue)
-			if len(valRes) < 2 {
-				return []ValuesResult{}, fmt.Errorf("invalid values: %s", valRes)
-			}
-			if strVal, ok := valRes[0].(string); ok {
-				tagValue.Name = strVal
-			}
-			if strVal, ok := valRes[1].(string); ok {
-				tagValue.Value = strVal
-			}
-			tagValueRes.Values = append(tagValueRes.Values, *tagValue)
-		}
-		tagValueRes.Measurement = res.Name
-		tagValueResult = append(tagValueResult, *tagValueRes)
-	}
-	return tagValueResult, nil
-
 }
