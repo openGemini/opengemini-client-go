@@ -26,7 +26,7 @@ func TestClientWriteBatchPoints(t *testing.T) {
 	testMeasurement := randomMeasurement()
 	// point1 will write success with four kinds variant type field
 	point1 := &Point{}
-	point1.SetMeasurement(testMeasurement)
+	point1.Measurement = testMeasurement
 	point1.AddTag("Tag", "Test1")
 	point1.AddField("stringField", "test1")
 	point1.AddField("intField", 897870)
@@ -36,13 +36,13 @@ func TestClientWriteBatchPoints(t *testing.T) {
 
 	// point2 will parse fail for having no field
 	point2 := &Point{}
-	point2.SetMeasurement(testMeasurement)
+	point2.Measurement = testMeasurement
 	point2.AddTag("Tag", "Test2")
 	bp = append(bp, point2)
 
 	// point3 will write success with timestamp
 	point3 := &Point{}
-	point3.SetMeasurement(testMeasurement)
+	point3.Measurement = testMeasurement
 	point3.AddTag("Tag", "Test3")
 	point3.AddField("stringField", "test3")
 	point3.AddField("boolField", false)
@@ -83,7 +83,7 @@ func TestClient_WriteBatchPointsWithRetentionPolicy(t *testing.T) {
 	testMeasurement := randomMeasurement()
 	// point1 will write success with four kinds variant type field
 	point1 := &Point{}
-	point1.SetMeasurement(testMeasurement)
+	point1.Measurement = testMeasurement
 	point1.AddTag("Tag", "Test1")
 	point1.AddField("stringField", "test1")
 	point1.AddField("intField", 897870)
@@ -93,13 +93,13 @@ func TestClient_WriteBatchPointsWithRetentionPolicy(t *testing.T) {
 
 	// point2 will parse fail for having no field
 	point2 := &Point{}
-	point2.SetMeasurement(testMeasurement)
+	point2.Measurement = testMeasurement
 	point2.AddTag("Tag", "Test2")
 	bp = append(bp, point2)
 
 	// point3 will write success with timestamp
 	point3 := &Point{}
-	point3.SetMeasurement(testMeasurement)
+	point3.Measurement = testMeasurement
 	point3.AddTag("Tag", "Test3")
 	point3.AddField("stringField", "test3")
 	point3.AddField("boolField", false)
@@ -257,7 +257,7 @@ func TestWriteWithBatchInterval(t *testing.T) {
 
 	// TestBatchInterval
 	point := &Point{}
-	point.SetMeasurement("test")
+	point.Measurement = "test"
 	point.AddField("field", "interval")
 	receiver := make(chan struct{})
 	startTime := time.Now()
@@ -305,9 +305,9 @@ func TestWriteWithBatchSize(t *testing.T) {
 	receiver := make(chan struct{}, 10)
 	for i := 0; i < 10; i++ {
 		point := &Point{}
-		point.SetMeasurement("test")
+		point.Measurement = "test"
 		point.AddField("field", "test")
-		point.SetTime(time.Now())
+		point.Time = time.Now()
 		err := c.WritePoint(context.Background(), database, point, func(err error) {
 			receiver <- struct{}{}
 		})

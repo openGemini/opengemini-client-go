@@ -23,7 +23,7 @@ func TestQueryWithEpoch(t *testing.T) {
 
 	testMeasurement := randomMeasurement()
 	p := &Point{}
-	p.SetMeasurement(testMeasurement)
+	p.Measurement = testMeasurement
 	p.AddField("TestField", 123)
 	p.Time = time.Now()
 
