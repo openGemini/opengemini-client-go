@@ -89,24 +89,15 @@ func buildEndpoints(addresses []*Address, tlsEnabled bool) []endpoint {
 }
 
 func newHttpClient(config Config) *http.Client {
-	if config.TlsEnabled {
-		return &http.Client{
-			Timeout: config.Timeout,
-			Transport: &http.Transport{
-				DialContext: (&net.Dialer{
-					Timeout: config.ConnectTimeout,
-				}).DialContext,
-				TLSClientConfig: config.TlsConfig,
-			},
-		}
-	} else {
-		return &http.Client{
-			Timeout: config.Timeout,
-			Transport: &http.Transport{
-				DialContext: (&net.Dialer{
-					Timeout: config.ConnectTimeout,
-				}).DialContext,
-			},
-		}
+	return &http.Client{
+		Timeout: config.Timeout,
+		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout: config.ConnectTimeout,
+			}).DialContext,
+			MaxConnsPerHost:     config.MaxConnsPerHost,
+			MaxIdleConnsPerHost: config.MaxIdleConnsPerHost,
+			TLSClientConfig:     config.TlsConfig,
+		},
 	}
 }
