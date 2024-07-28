@@ -4,6 +4,7 @@
 # ide
 .idea/**
 .vscode/**
+!.idea/icon.svg
 
 target/*
 
