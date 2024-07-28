@@ -61,7 +61,7 @@ Write single point:
 ```go
 exampleMeasurement := "ExampleMeasurement"
 point := &Point{}
-point.SetMeasurement(exampleMeasurement)
+point.Measurement = exampleMeasurement
 point.AddTag("Weather", "foggy")
 point.AddField("Humidity", 87)
 point.AddField("Temperature", 25)
@@ -84,11 +84,11 @@ var tagList []string
 tagList = append(tagList, "sunny", "rainy", "windy")
 for i := 0; i < 10; i++ {
 	p := &Point{}
-	p.SetMeasurement(exampleMeasurement)
+	p.Measurement=exampleMeasurement
 	p.AddTag("Weather", tagList[rand.Int31n(3)])
 	p.AddField("Humidity", rand.Int31n(100))
 	p.AddField("Temperature", rand.Int31n(40))
-	p.SetTime(time.Now())
+	p.Time = time.Now()
         pointList = append(pointList,p)
 	time.Sleep(time.Nanosecond)
 }

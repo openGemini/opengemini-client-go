@@ -78,18 +78,6 @@ func (p *Point) AddField(key string, value interface{}) {
 	p.Fields[key] = value
 }
 
-func (p *Point) SetTime(t time.Time) {
-	p.Time = t
-}
-
-func (p *Point) SetPrecision(precision Precision) {
-	p.Precision = precision
-}
-
-func (p *Point) SetMeasurement(name string) {
-	p.Measurement = name
-}
-
 type LineProtocolEncoder struct {
 	w io.Writer
 }
