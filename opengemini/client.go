@@ -106,7 +106,8 @@ type AuthConfig struct {
 type BatchConfig struct {
 	// BatchInterval batch time interval that triggers batch processing.
 	BatchInterval time.Duration
-	// BatchSize batch size that triggers batch processing.
+	// BatchSize batch size that triggers batch processing, set the batch size appropriately, if set too large,
+	// it may cause client overflow or server-side rejected the request.
 	BatchSize int
 }
 
