@@ -3,9 +3,10 @@ package opengemini
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestClientWriteBatchPoints(t *testing.T) {
@@ -22,32 +23,36 @@ func TestClientWriteBatchPoints(t *testing.T) {
 		assert.Nil(t, err)
 	}()
 
-	bp := make([]*Point, 3)
 	testMeasurement := randomMeasurement()
 	// point1 will write success with four kinds variant type field
-	point1 := &Point{}
-	point1.SetMeasurement(testMeasurement)
-	point1.AddTag("Tag", "Test1")
-	point1.AddField("stringField", "test1")
-	point1.AddField("intField", 897870)
-	point1.AddField("doubleField", 834.5433)
-	point1.AddField("boolField", true)
-	bp = append(bp, point1)
+	point1 := &Point{
+		Measurement: testMeasurement,
+		Tags:        map[string]string{"Tag": "Test1"},
+		Fields: map[string]interface{}{
+			"stringField": "test1",
+			"intField":    897870,
+			"doubleField": 834.5433,
+			"boolField":   true,
+		},
+	}
 
 	// point2 will parse fail for having no field
-	point2 := &Point{}
-	point2.SetMeasurement(testMeasurement)
-	point2.AddTag("Tag", "Test2")
-	bp = append(bp, point2)
+	point2 := &Point{
+		Measurement: testMeasurement,
+		Tags:        map[string]string{"Tag": "Test2"},
+	}
 
 	// point3 will write success with timestamp
-	point3 := &Point{}
-	point3.SetMeasurement(testMeasurement)
-	point3.AddTag("Tag", "Test3")
-	point3.AddField("stringField", "test3")
-	point3.AddField("boolField", false)
-	point3.Time = time.Now()
-	bp = append(bp, point3)
+	point3 := &Point{
+		Measurement: testMeasurement,
+		Time:        time.Now(),
+		Tags:        map[string]string{"Tag": "Test3"},
+		Fields: map[string]interface{}{
+			"stringField": "test3",
+			"boolField":   false,
+		},
+	}
+	bp := []*Point{point1, point2, point3}
 
 	err = c.WriteBatchPoints(database, bp)
 	assert.Nil(t, err)
@@ -82,28 +87,35 @@ func TestClient_WriteBatchPointsWithRetentionPolicy(t *testing.T) {
 	bp := make([]*Point, 3)
 	testMeasurement := randomMeasurement()
 	// point1 will write success with four kinds variant type field
-	point1 := &Point{}
-	point1.SetMeasurement(testMeasurement)
-	point1.AddTag("Tag", "Test1")
-	point1.AddField("stringField", "test1")
-	point1.AddField("intField", 897870)
-	point1.AddField("doubleField", 834.5433)
-	point1.AddField("boolField", true)
+	point1 := &Point{
+		Measurement: testMeasurement,
+		Tags:        map[string]string{"Tag": "Test1"},
+		Fields: map[string]interface{}{
+			"stringField": "test1",
+			"intField":    897870,
+			"doubleField": 834.5433,
+			"boolField":   true,
+		},
+	}
 	bp = append(bp, point1)
 
 	// point2 will parse fail for having no field
-	point2 := &Point{}
-	point2.SetMeasurement(testMeasurement)
-	point2.AddTag("Tag", "Test2")
+	point2 := &Point{
+		Measurement: testMeasurement,
+		Tags:        map[string]string{"Tag": "Test2"},
+	}
 	bp = append(bp, point2)
 
 	// point3 will write success with timestamp
-	point3 := &Point{}
-	point3.SetMeasurement(testMeasurement)
-	point3.AddTag("Tag", "Test3")
-	point3.AddField("stringField", "test3")
-	point3.AddField("boolField", false)
-	point3.Time = time.Now()
+	point3 := &Point{
+		Measurement: testMeasurement,
+		Time:        time.Now(),
+		Tags:        map[string]string{"Tag": "Test3"},
+		Fields: map[string]interface{}{
+			"stringField": "test3",
+			"boolField":   false,
+		},
+	}
 	bp = append(bp, point3)
 
 	err = c.WriteBatchPointsWithRp(database, "testRp", bp)
@@ -145,10 +157,11 @@ func TestClientWritePoint(t *testing.T) {
 	callback := func(err error) {
 		assert.Nil(t, err)
 	}
-	point := &Point{}
-	point.Measurement = randomMeasurement()
-	point.AddTag("tag", "test")
-	point.AddField("field", "test")
+	point := &Point{
+		Measurement: randomMeasurement(),
+		Tags:        map[string]string{"tag": "test"},
+		Fields:      map[string]interface{}{"filed": "test"},
+	}
 	err = c.WritePoint(context.Background(), database, point, callback)
 	assert.Nil(t, err)
 }
@@ -172,10 +185,11 @@ func TestClientWritePointWithRetentionPolicy(t *testing.T) {
 	callback := func(err error) {
 		assert.Nil(t, err)
 	}
-	point := &Point{}
-	point.Measurement = randomMeasurement()
-	point.AddTag("tag", "test")
-	point.AddField("field", "test")
+	point := &Point{
+		Measurement: randomMeasurement(),
+		Tags:        map[string]string{"tag": "test"},
+		Fields:      map[string]interface{}{"field": "test"},
+	}
 	err = c.WritePointWithRp(context.Background(), database, "testRp", point, callback)
 	assert.Nil(t, err)
 	time.Sleep(time.Second * 3)
@@ -213,10 +227,11 @@ func TestWriteAssignedIntegerField(t *testing.T) {
 		assert.Nil(t, err)
 	}
 	measurement := randomMeasurement()
-	point := &Point{}
-	point.Measurement = measurement
-	point.AddTag("tag", "test")
-	point.AddField("field", 123)
+	point := &Point{
+		Measurement: randomMeasurement(),
+		Tags:        map[string]string{"tag": "test"},
+		Fields:      map[string]interface{}{"field": 123},
+	}
 	err = c.WritePoint(context.Background(), database, point, callback)
 	assert.Nil(t, err)
 
@@ -256,9 +271,10 @@ func TestWriteWithBatchInterval(t *testing.T) {
 	}()
 
 	// TestBatchInterval
-	point := &Point{}
-	point.SetMeasurement("test")
-	point.AddField("field", "interval")
+	point := &Point{
+		Measurement: "test",
+		Fields:      map[string]interface{}{"field": "interval"},
+	}
 	receiver := make(chan struct{})
 	startTime := time.Now()
 	err = c.WritePoint(context.Background(), database, point, func(err error) {
@@ -304,10 +320,11 @@ func TestWriteWithBatchSize(t *testing.T) {
 	callbackCount := 0
 	receiver := make(chan struct{}, 10)
 	for i := 0; i < 10; i++ {
-		point := &Point{}
-		point.SetMeasurement("test")
-		point.AddField("field", "test")
-		point.SetTime(time.Now())
+		point := &Point{
+			Measurement: "test",
+			Time:        time.Now(),
+			Fields:      map[string]interface{}{"field": "size"},
+		}
 		err := c.WritePoint(context.Background(), database, point, func(err error) {
 			receiver <- struct{}{}
 		})

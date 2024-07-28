@@ -7,9 +7,10 @@ package main
 import (
 	"context"
 	"fmt"
-	. "github.com/openGemini/opengemini-client-go/opengemini"
 	"math/rand"
 	"time"
+
+	. "github.com/openGemini/opengemini-client-go/opengemini"
 )
 
 func main() {
@@ -37,11 +38,14 @@ func main() {
 	exampleMeasurement := "ExampleMeasurement"
 
 	// use point write method
-	point := &Point{}
-	point.SetMeasurement(exampleMeasurement)
-	point.AddTag("Weather", "foggy")
-	point.AddField("Humidity", 87)
-	point.AddField("Temperature", 25)
+	point := &Point{
+		Measurement: exampleMeasurement,
+		Tags:        map[string]string{"Weather": "foggy"},
+		Fields: map[string]interface{}{
+			"Humidity":    87,
+			"Temperature": 25,
+		},
+	}
 	err = client.WritePoint(context.Background(), exampleDatabase, point, func(err error) {
 		if err != nil {
 			fmt.Printf("write point failed for %s", err)
@@ -52,16 +56,18 @@ func main() {
 	}
 
 	// use write batch points method
-	var pointList []*Point
-	var tagList []string
-	tagList = append(tagList, "sunny", "rainy", "windy")
+	pointList := make([]*Point, 0, 10)
+	tagList := []string{"sunny", "rainy", "windy"}
 	for i := 0; i < 10; i++ {
-		p := &Point{}
-		p.SetMeasurement(exampleMeasurement)
-		p.AddTag("Weather", tagList[rand.Int31n(3)])
-		p.AddField("Humidity", rand.Int31n(100))
-		p.AddField("Temperature", rand.Int31n(40))
-		p.SetTime(time.Now())
+		p := &Point{
+			Measurement: exampleMeasurement,
+			Time:        time.Now(),
+			Tags:        map[string]string{"Weather": tagList[rand.Int31n(3)]},
+			Fields: map[string]interface{}{
+				"Humidity":    rand.Int31n(100),
+				"Temperature": rand.Int31n(40),
+			},
+		}
 		pointList = append(pointList, p)
 		time.Sleep(time.Nanosecond)
 	}

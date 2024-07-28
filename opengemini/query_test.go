@@ -2,9 +2,10 @@ package opengemini
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestQueryWithEpoch(t *testing.T) {
@@ -22,10 +23,11 @@ func TestQueryWithEpoch(t *testing.T) {
 	}()
 
 	testMeasurement := randomMeasurement()
-	p := &Point{}
-	p.SetMeasurement(testMeasurement)
-	p.AddField("TestField", 123)
-	p.Time = time.Now()
+	p := &Point{
+		Measurement: testMeasurement,
+		Time:        time.Now(),
+		Fields:      map[string]interface{}{"TestField": 123},
+	}
 
 	err = c.WritePoint(context.Background(), database, p, func(err error) {
 		assert.Nil(t, err)

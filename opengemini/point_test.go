@@ -44,24 +44,24 @@ func TestPointEncode(t *testing.T) {
 	if strings.Compare(encodePoint(point), "") != 0 {
 		t.Error("error translate for point hasn't set measurement")
 	}
-	point.SetMeasurement("measurement")
+	point.Measurement = "measurement"
 	// encode Point which hasn't own field
 	if strings.Compare(encodePoint(point), "") != 0 {
 		t.Error("error translate for point hasn't own field")
 	}
-	point.AddField("filed1", "string field")
+	point.Fields = map[string]interface{}{"filed1": "string field"}
 	// encode Point which only has a field
 	if strings.Compare(encodePoint(point),
 		"measurement filed1=\"string field\"") != 0 {
 		t.Error("parse point with a string filed failed")
 	}
-	point.AddTag("tag", "tag1")
+	point.Tags = map[string]string{"tag": "tag1"}
 	// encode Point which has a field with a tag
 	if strings.Compare(encodePoint(point),
 		"measurement,tag=tag1 filed1=\"string field\"") != 0 {
 		t.Error("parse point with a tag failed")
 	}
-	point.SetTime(time.Date(2023, 12, 1, 12, 32, 18, 132363612, time.UTC))
+	point.Time = time.Date(2023, 12, 1, 12, 32, 18, 132363612, time.UTC)
 	if strings.Compare(encodePoint(point),
 		"measurement,tag=tag1 filed1=\"string field\" 1701433938132363612") != 0 {
 		t.Error("parse point with a tag failed")
