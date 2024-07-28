@@ -1,6 +1,7 @@
 package opengemini
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -8,7 +9,11 @@ import (
 
 // Ping check that status of cluster.
 func (c *client) Ping(idx int) error {
-	resp, err := c.executeHttpGetByIdx(idx, UrlPing, requestDetails{})
+	return c.ping(context.TODO(), idx)
+}
+
+func (c *client) ping(ctx context.Context, idx int) error {
+	resp, err := c.executeHttpRequestByIdxWithContext(ctx, idx, http.MethodGet, UrlPing, requestDetails{})
 	if err != nil {
 		return errors.New("ping request failed, error: " + err.Error())
 	}
