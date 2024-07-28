@@ -20,9 +20,11 @@ type Client interface {
 	Ping(idx int) error
 	Query(query Query) (*QueryResult, error)
 
-	// WritePoint write single point to assigned database
+	// WritePoint write single point to assigned database. If you don't want to implement callbackFunc to receive error
+	// in writing, you cloud use opengemini.CallbackDummy.
 	WritePoint(ctx context.Context, database string, point *Point, callbackFunc WriteCallback) error
-	// WritePointWithRp write single point with retention policy
+	// WritePointWithRp write single point with retention policy. If you don't want to implement callbackFunc to
+	//  receive error in writing, you cloud use opengemini.CallbackDummy.
 	WritePointWithRp(ctx context.Context, database string, rp string, point *Point, callbackFunc WriteCallback) error
 	// WriteBatchPoints write batch points to assigned database
 	WriteBatchPoints(database string, bp []*Point) error
