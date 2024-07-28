@@ -76,6 +76,10 @@ func newClient(c *Config) (Client, error) {
 func (c *client) Close() error {
 	c.batchContextCancel()
 	c.dataChanMap.Range(func(key, value interface{}) bool {
+		cb, ok := value.(chan *sendBatchWithCB)
+		if ok {
+			close(cb)
+		}
 		c.dataChanMap.Delete(key)
 		return true
 	})

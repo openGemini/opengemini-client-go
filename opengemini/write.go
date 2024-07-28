@@ -39,26 +39,31 @@ type dbRp struct {
 
 func (c *client) WritePointWithRp(database string, rp string, point *Point, callback WriteCallback) error {
 	if c.config.BatchConfig != nil {
-		value, ok := c.dataChanMap.Load(dbRp{db: database, rp: rp})
-		if !ok {
-			newCollection := make(chan *sendBatchWithCB, c.config.BatchConfig.BatchSize*2)
-			actual, loaded := c.dataChanMap.LoadOrStore(database, newCollection)
-			if loaded {
-				close(newCollection)
-			} else {
-				select {
-				case <-c.batchContext.Done():
-					return c.batchContext.Err()
-				default:
-					go c.internalBatchSend(c.batchContext, database, rp, actual.(chan *sendBatchWithCB))
+		select {
+		case <-c.batchContext.Done():
+			return c.batchContext.Err()
+		default:
+			value, ok := c.dataChanMap.Load(dbRp{db: database, rp: rp})
+			if !ok {
+				newCollection := make(chan *sendBatchWithCB, c.config.BatchConfig.BatchSize*2)
+				actual, loaded := c.dataChanMap.LoadOrStore(database, newCollection)
+				if loaded {
+					close(newCollection)
+				} else {
+					select {
+					case <-c.batchContext.Done():
+						return c.batchContext.Err()
+					default:
+						go c.internalBatchSend(c.batchContext, database, rp, actual.(chan *sendBatchWithCB))
+					}
 				}
+				value = actual
 			}
-			value = actual
-		}
-		collection := value.(chan *sendBatchWithCB)
-		collection <- &sendBatchWithCB{
-			point:    point,
-			callback: callback,
+			collection := value.(chan *sendBatchWithCB)
+			collection <- &sendBatchWithCB{
+				point:    point,
+				callback: callback,
+			}
 		}
 		return nil
 	}
@@ -138,6 +143,10 @@ func (c *client) internalBatchSend(ctx context.Context, database string, rp stri
 	for {
 		select {
 		case <-ctx.Done():
+			ticker.Stop()
+			for record := range resource {
+				record.callback(fmt.Errorf("send batch context cancelled"))
+			}
 			return
 		case <-ticker.C:
 			needFlush = true
