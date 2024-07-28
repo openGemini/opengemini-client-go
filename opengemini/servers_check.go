@@ -21,13 +21,12 @@ func (c *client) endpointsCheck(ctx context.Context) {
 			t.Stop()
 			return
 		case <-t.C:
+			c.checkUpOrDown(ctx)
 		}
-
-		c.checkUpOrDown()
 	}
 }
 
-func (c *client) checkUpOrDown() {
+func (c *client) checkUpOrDown(ctx context.Context) {
 	wg := &sync.WaitGroup{}
 	for i := 0; i < len(c.endpoints); i++ {
 		wg.Add(1)
@@ -38,7 +37,7 @@ func (c *client) checkUpOrDown() {
 					return
 				}
 			}()
-			err := c.Ping(idx)
+			err := c.ping(ctx, idx)
 			c.endpoints[idx].isDown.Store(err != nil)
 		}(i)
 	}
