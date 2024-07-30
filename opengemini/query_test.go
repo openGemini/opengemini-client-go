@@ -1,7 +1,6 @@
 package opengemini
 
 import (
-	"context"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -27,7 +26,7 @@ func TestQueryWithEpoch(t *testing.T) {
 	p.AddField("TestField", 123)
 	p.Time = time.Now()
 
-	err = c.WritePoint(context.Background(), database, p, func(err error) {
+	err = c.WritePoint(database, p, func(err error) {
 		assert.Nil(t, err)
 	})
 	assert.Nil(t, err)

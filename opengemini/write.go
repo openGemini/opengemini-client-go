@@ -3,7 +3,6 @@ package opengemini
 import (
 	"bytes"
 	"compress/gzip"
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -23,8 +22,8 @@ func (c *client) WriteBatchPoints(database string, bp []*Point) error {
 	return c.WriteBatchPointsWithRp(database, "", bp)
 }
 
-func (c *client) WritePoint(ctx context.Context, database string, point *Point, callback WriteCallback) error {
-	return c.WritePointWithRp(ctx, database, "", point, callback)
+func (c *client) WritePoint(database string, point *Point, callback WriteCallback) error {
+	return c.WritePointWithRp(database, "", point, callback)
 }
 
 type sendBatchWithCB struct {
@@ -37,7 +36,7 @@ type dbRp struct {
 	rp string
 }
 
-func (c *client) WritePointWithRp(ctx context.Context, database string, rp string, point *Point, callback WriteCallback) error {
+func (c *client) WritePointWithRp(database string, rp string, point *Point, callback WriteCallback) error {
 	if c.config.BatchConfig != nil {
 		value, ok := c.dataChan.Load(dbRp{db: database, rp: rp})
 		if !ok {
@@ -46,7 +45,7 @@ func (c *client) WritePointWithRp(ctx context.Context, database string, rp strin
 			if loaded {
 				close(newCollection)
 			} else {
-				go c.internalBatchSend(ctx, database, rp, actual.(chan *sendBatchWithCB))
+				go c.internalBatchSend(database, rp, actual.(chan *sendBatchWithCB))
 			}
 			value = actual
 		}
@@ -124,7 +123,7 @@ func (c *client) WriteBatchPointsWithRp(database string, rp string, bp []*Point)
 	return nil
 }
 
-func (c *client) internalBatchSend(ctx context.Context, database string, rp string, resource <-chan *sendBatchWithCB) {
+func (c *client) internalBatchSend(database string, rp string, resource <-chan *sendBatchWithCB) {
 	var tickInterval = c.config.BatchConfig.BatchInterval
 	var ticker = time.NewTicker(tickInterval)
 	var points = make([]*Point, 0, c.config.BatchConfig.BatchSize)
@@ -132,9 +131,6 @@ func (c *client) internalBatchSend(ctx context.Context, database string, rp stri
 	needFlush := false
 	for {
 		select {
-		case <-ctx.Done():
-			ticker.Stop()
-			return
 		case <-ticker.C:
 			needFlush = true
 		case record := <-resource:
