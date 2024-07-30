@@ -1,7 +1,6 @@
 package opengemini
 
 import (
-	"context"
 	"crypto/tls"
 	"github.com/prometheus/client_golang/prometheus"
 	"time"
@@ -22,10 +21,10 @@ type Client interface {
 
 	// WritePoint write single point to assigned database. If you don't want to implement callbackFunc to receive error
 	// in writing, you cloud use opengemini.CallbackDummy.
-	WritePoint(ctx context.Context, database string, point *Point, callbackFunc WriteCallback) error
+	WritePoint(database string, point *Point, callbackFunc WriteCallback) error
 	// WritePointWithRp write single point with retention policy. If you don't want to implement callbackFunc to
 	//  receive error in writing, you cloud use opengemini.CallbackDummy.
-	WritePointWithRp(ctx context.Context, database string, rp string, point *Point, callbackFunc WriteCallback) error
+	WritePointWithRp(database string, rp string, point *Point, callbackFunc WriteCallback) error
 	// WriteBatchPoints write batch points to assigned database
 	WriteBatchPoints(database string, bp []*Point) error
 	// WriteBatchPointsWithRp write batch points with retention policy

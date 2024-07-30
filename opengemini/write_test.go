@@ -1,7 +1,6 @@
 package opengemini
 
 import (
-	"context"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -149,7 +148,7 @@ func TestClientWritePoint(t *testing.T) {
 	point.Measurement = randomMeasurement()
 	point.AddTag("tag", "test")
 	point.AddField("field", "test")
-	err = c.WritePoint(context.Background(), database, point, callback)
+	err = c.WritePoint(database, point, callback)
 	assert.Nil(t, err)
 }
 
@@ -176,7 +175,7 @@ func TestClientWritePointWithRetentionPolicy(t *testing.T) {
 	point.Measurement = randomMeasurement()
 	point.AddTag("tag", "test")
 	point.AddField("field", "test")
-	err = c.WritePointWithRp(context.Background(), database, "testRp", point, callback)
+	err = c.WritePointWithRp(database, "testRp", point, callback)
 	assert.Nil(t, err)
 	time.Sleep(time.Second * 3)
 	res, err := c.Query(Query{
@@ -217,7 +216,7 @@ func TestWriteAssignedIntegerField(t *testing.T) {
 	point.Measurement = measurement
 	point.AddTag("tag", "test")
 	point.AddField("field", 123)
-	err = c.WritePoint(context.Background(), database, point, callback)
+	err = c.WritePoint(database, point, callback)
 	assert.Nil(t, err)
 
 	time.Sleep(time.Second * 5)
@@ -261,7 +260,7 @@ func TestWriteWithBatchInterval(t *testing.T) {
 	point.AddField("field", "interval")
 	receiver := make(chan struct{})
 	startTime := time.Now()
-	err = c.WritePoint(context.Background(), database, point, func(err error) {
+	err = c.WritePoint(database, point, func(err error) {
 		receiver <- struct{}{}
 	})
 	assert.Nil(t, err)
@@ -308,7 +307,7 @@ func TestWriteWithBatchSize(t *testing.T) {
 		point.Measurement = "test"
 		point.AddField("field", "test")
 		point.Time = time.Now()
-		err := c.WritePoint(context.Background(), database, point, func(err error) {
+		err := c.WritePoint(database, point, func(err error) {
 			receiver <- struct{}{}
 		})
 		assert.Nil(t, err)
