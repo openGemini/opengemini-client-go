@@ -16,7 +16,7 @@ OpenGemini is a cloud-native distributed time series database, find more informa
 
 ## Requirements
 
-- Go 1.19+
+- Go 1.20+
 
 ## Usage
 
