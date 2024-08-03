@@ -19,8 +19,8 @@ func CallbackDummy(error) {
 	// Do nothing
 }
 
-func (c *client) WriteBatchPoints(database string, bp []*Point) error {
-	return c.WriteBatchPointsWithRp(database, "", bp)
+func (c *client) WriteBatchPoints(ctx context.Context, database string, bp []*Point) error {
+	return c.WriteBatchPointsWithRp(ctx, database, "", bp)
 }
 
 func (c *client) WritePoint(database string, point *Point, callback WriteCallback) error {
@@ -77,7 +77,7 @@ func (c *client) WritePointWithRp(database string, rp string, point *Point, call
 		}
 	}
 
-	resp, err := c.innerWrite(database, rp, &buffer)
+	resp, err := c.innerWrite(context.TODO(), database, rp, &buffer)
 	if err != nil {
 		callback(errors.New("innerWrite request failed, error: " + err.Error()))
 		return nil
@@ -98,7 +98,7 @@ func (c *client) WritePointWithRp(database string, rp string, point *Point, call
 	return nil
 }
 
-func (c *client) WriteBatchPointsWithRp(database string, rp string, bp []*Point) error {
+func (c *client) WriteBatchPointsWithRp(ctx context.Context, database string, rp string, bp []*Point) error {
 	var buffer bytes.Buffer
 	writer := c.newWriter(&buffer)
 
@@ -113,7 +113,7 @@ func (c *client) WriteBatchPointsWithRp(database string, rp string, bp []*Point)
 		}
 	}
 
-	resp, err := c.innerWrite(database, rp, &buffer)
+	resp, err := c.innerWrite(ctx, database, rp, &buffer)
 	if err != nil {
 		return errors.New("innerWrite request failed, error: " + err.Error())
 	}
@@ -146,7 +146,7 @@ func (c *client) internalBatchSend(ctx context.Context, database string, rp stri
 			cbs = append(cbs, record.callback)
 		}
 		if len(points) >= c.config.BatchConfig.BatchSize || needFlush {
-			err := c.WriteBatchPointsWithRp(database, rp, points)
+			err := c.WriteBatchPointsWithRp(ctx, database, rp, points)
 			for _, callback := range cbs {
 				callback(err)
 			}
@@ -166,7 +166,7 @@ func (c *client) newWriter(buffer *bytes.Buffer) io.Writer {
 	}
 }
 
-func (c *client) innerWrite(database string, rp string, buffer *bytes.Buffer) (*http.Response, error) {
+func (c *client) innerWrite(ctx context.Context, database string, rp string, buffer *bytes.Buffer) (*http.Response, error) {
 	req := requestDetails{
 		queryValues: make(url.Values),
 		body:        buffer,
@@ -183,7 +183,7 @@ func (c *client) innerWrite(database string, rp string, buffer *bytes.Buffer) (*
 	c.metrics.writeDatabaseCounter.WithLabelValues(database).Add(1)
 	startAt := time.Now()
 
-	response, err := c.executeHttpPost(UrlWrite, req)
+	response, err := c.executeHttpRequestWithContext(ctx, http.MethodPost, UrlWrite, req)
 
 	cost := float64(time.Since(startAt).Milliseconds())
 	c.metrics.writeLatency.Observe(cost)

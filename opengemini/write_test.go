@@ -1,6 +1,7 @@
 package opengemini
 
 import (
+	"context"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -48,7 +49,7 @@ func TestClientWriteBatchPoints(t *testing.T) {
 	point3.Time = time.Now()
 	bp = append(bp, point3)
 
-	err = c.WriteBatchPoints(database, bp)
+	err = c.WriteBatchPoints(context.Background(), database, bp)
 	assert.Nil(t, err)
 
 	// check whether write success
@@ -105,7 +106,7 @@ func TestClient_WriteBatchPointsWithRetentionPolicy(t *testing.T) {
 	point3.Time = time.Now()
 	bp = append(bp, point3)
 
-	err = c.WriteBatchPointsWithRp(database, "testRp", bp)
+	err = c.WriteBatchPointsWithRp(context.Background(), database, "testRp", bp)
 	assert.Nil(t, err)
 
 	time.Sleep(time.Second * 5)

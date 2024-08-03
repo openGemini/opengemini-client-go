@@ -92,7 +92,7 @@ for i := 0; i < 10; i++ {
         pointList = append(pointList,p)
 	time.Sleep(time.Nanosecond)
 }
-err = client.WriteBatchPoints(exampleDatabase, pointList)
+err = client.WriteBatchPoints(context.Background(), exampleDatabase, pointList)
 if err != nil {
 	fmt.Println(err)
 }
