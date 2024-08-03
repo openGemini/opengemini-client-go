@@ -43,10 +43,14 @@ func (m *metrics) Collect(ch chan<- prometheus.Metric) {
 }
 
 // newMetricsProvider returns metrics registered to registerer.
-func newMetricsProvider() *metrics {
+func newMetricsProvider(customLabels map[string]string) *metrics {
 	constLabels := map[string]string{
 		"client": "go", // distinguish from other language client
 	}
+	for k, v := range customLabels {
+		constLabels[k] = v
+	}
+
 	constQuantiles := map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001}
 	labelNames := []string{"database"}
 

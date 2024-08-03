@@ -64,7 +64,7 @@ func newClient(c *Config) (Client, error) {
 		config:             c,
 		endpoints:          buildEndpoints(c.Addresses, c.TlsEnabled),
 		cli:                newHttpClient(*c),
-		metrics:            newMetricsProvider(),
+		metrics:            newMetricsProvider(c.CustomMetricsLabels),
 		batchContext:       ctx,
 		batchContextCancel: cancel,
 	}
