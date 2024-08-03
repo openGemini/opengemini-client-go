@@ -3,6 +3,7 @@ package opengemini
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -38,14 +39,19 @@ type dbRp struct {
 
 func (c *client) WritePointWithRp(database string, rp string, point *Point, callback WriteCallback) error {
 	if c.config.BatchConfig != nil {
-		value, ok := c.dataChan.Load(dbRp{db: database, rp: rp})
+		value, ok := c.dataChanMap.Load(dbRp{db: database, rp: rp})
 		if !ok {
 			newCollection := make(chan *sendBatchWithCB, c.config.BatchConfig.BatchSize*2)
-			actual, loaded := c.dataChan.LoadOrStore(database, newCollection)
+			actual, loaded := c.dataChanMap.LoadOrStore(database, newCollection)
 			if loaded {
 				close(newCollection)
 			} else {
-				go c.internalBatchSend(database, rp, actual.(chan *sendBatchWithCB))
+				select {
+				case <-c.batchContext.Done():
+					return c.batchContext.Err()
+				default:
+					go c.internalBatchSend(c.batchContext, database, rp, actual.(chan *sendBatchWithCB))
+				}
 			}
 			value = actual
 		}
@@ -123,7 +129,7 @@ func (c *client) WriteBatchPointsWithRp(database string, rp string, bp []*Point)
 	return nil
 }
 
-func (c *client) internalBatchSend(database string, rp string, resource <-chan *sendBatchWithCB) {
+func (c *client) internalBatchSend(ctx context.Context, database string, rp string, resource <-chan *sendBatchWithCB) {
 	var tickInterval = c.config.BatchConfig.BatchInterval
 	var ticker = time.NewTicker(tickInterval)
 	var points = make([]*Point, 0, c.config.BatchConfig.BatchSize)
@@ -131,6 +137,8 @@ func (c *client) internalBatchSend(database string, rp string, resource <-chan *
 	needFlush := false
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case <-ticker.C:
 			needFlush = true
 		case record := <-resource:

@@ -17,14 +17,15 @@ type endpoint struct {
 }
 
 type client struct {
-	config    *Config
-	endpoints []endpoint
-	cli       *http.Client
-	prevIdx   atomic.Int32
-	dataChan  sync.Map
-	metrics   *metrics
+	config      *Config
+	endpoints   []endpoint
+	cli         *http.Client
+	prevIdx     atomic.Int32
+	dataChanMap sync.Map
+	metrics     *metrics
 
-	cancel context.CancelFunc
+	batchContext       context.Context
+	batchContextCancel context.CancelFunc
 }
 
 func newClient(c *Config) (Client, error) {
@@ -60,11 +61,12 @@ func newClient(c *Config) (Client, error) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	dbClient := &client{
-		config:    c,
-		endpoints: buildEndpoints(c.Addresses, c.TlsEnabled),
-		cli:       newHttpClient(*c),
-		metrics:   newMetricsProvider(),
-		cancel:    cancel,
+		config:             c,
+		endpoints:          buildEndpoints(c.Addresses, c.TlsEnabled),
+		cli:                newHttpClient(*c),
+		metrics:            newMetricsProvider(),
+		batchContext:       ctx,
+		batchContextCancel: cancel,
 	}
 	dbClient.prevIdx.Store(-1)
 	go dbClient.endpointsCheck(ctx)
@@ -72,7 +74,11 @@ func newClient(c *Config) (Client, error) {
 }
 
 func (c *client) Close() error {
-	c.cancel()
+	c.batchContextCancel()
+	c.dataChanMap.Range(func(key, value interface{}) bool {
+		c.dataChanMap.Delete(key)
+		return true
+	})
 	return nil
 }
 

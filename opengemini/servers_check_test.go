@@ -64,7 +64,7 @@ func TestServerCheck(t *testing.T) {
 	}
 	cli.prevIdx.Store(-1)
 	var ctx context.Context
-	ctx, cli.cancel = context.WithCancel(context.Background())
+	ctx, cli.batchContextCancel = context.WithCancel(context.Background())
 	go cli.endpointsCheck(ctx)
 
 	url, err := cli.getServerUrl()
