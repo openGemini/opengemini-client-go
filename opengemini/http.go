@@ -62,6 +62,14 @@ func (c *client) executeHttpRequest(method, urlPath string, details requestDetai
 	return c.executeHttpRequestInner(context.TODO(), method, serverUrl, urlPath, details)
 }
 
+func (c *client) executeHttpRequestWithContext(ctx context.Context, method, urlPath string, details requestDetails) (*http.Response, error) {
+	serverUrl, err := c.getServerUrl()
+	if err != nil {
+		return nil, err
+	}
+	return c.executeHttpRequestInner(ctx, method, serverUrl, urlPath, details)
+}
+
 // executeHttpRequestInner executes an HTTP request with the given method, server URL, URL path, and request details.
 //
 // Parameters:
