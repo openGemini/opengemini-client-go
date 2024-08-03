@@ -85,6 +85,8 @@ type Config struct {
 	TlsEnabled bool
 	// TlsConfig configuration information for tls.
 	TlsConfig *tls.Config
+	// CustomMetricsLabels add custom labels to all the metrics reported by this client instance
+	CustomMetricsLabels map[string]string
 }
 
 // Address configuration for providing service.
