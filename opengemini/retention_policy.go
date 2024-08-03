@@ -155,12 +155,6 @@ func (c *client) ShowRetentionPolicies(database string) ([]RetentionPolicy, erro
 		return rpResult, fmt.Errorf("show retention policy err: %s", err)
 	}
 
-	if len(queryResult.Results) == 0 {
-		return rpResult, nil
-	}
-	if len(queryResult.Results[0].Series) == 0 {
-		return rpResult, nil
-	}
 	rpResult = queryResult.convertRetentionPolicy()
 	return rpResult, nil
 }
