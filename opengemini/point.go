@@ -92,7 +92,7 @@ func (enc *LineProtocolEncoder) writeByte(b byte) error {
 }
 
 // writeString writes a string to the underlying writer, escaping characters
-// with a backslash if necessary. Note that, for simplity, `charsToEscape` can
+// with a backslash if necessary. Note that, for simplify, `charsToEscape` can
 // only contain ASCII characters.
 func (enc *LineProtocolEncoder) writeString(s string, charsToEscape string) error {
 	for i := 0; i < len(s); i++ {
