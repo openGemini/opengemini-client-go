@@ -7,20 +7,20 @@ package main
 import (
 	"context"
 	"fmt"
-	. "github.com/openGemini/opengemini-client-go/opengemini"
+	"github.com/openGemini/opengemini-client-go/opengemini"
 	"math/rand"
 	"time"
 )
 
 func main() {
 	// create an openGemini client
-	config := &Config{
-		Addresses: []*Address{{
+	config := &opengemini.Config{
+		Addresses: []*opengemini.Address{{
 			Host: "127.0.0.1",
 			Port: 8086,
 		}},
 	}
-	client, err := NewClient(config)
+	client, err := opengemini.NewClient(config)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -37,7 +37,7 @@ func main() {
 	exampleMeasurement := "ExampleMeasurement"
 
 	// use point write method
-	point := &Point{}
+	point := &opengemini.Point{}
 	point.Measurement = exampleMeasurement
 	point.AddTag("Weather", "foggy")
 	point.AddField("Humidity", 87)
@@ -52,11 +52,11 @@ func main() {
 	}
 
 	// use write batch points method
-	var pointList []*Point
+	var pointList []*opengemini.Point
 	var tagList []string
 	tagList = append(tagList, "sunny", "rainy", "windy")
 	for i := 0; i < 10; i++ {
-		p := &Point{}
+		p := &opengemini.Point{}
 		p.Measurement = exampleMeasurement
 		p.AddTag("Weather", tagList[rand.Int31n(3)])
 		p.AddField("Humidity", rand.Int31n(100))
@@ -73,7 +73,7 @@ func main() {
 	time.Sleep(time.Second * 5)
 
 	// do a query
-	q := Query{
+	q := opengemini.Query{
 		Database: exampleDatabase,
 		Command:  "select * from " + exampleMeasurement,
 	}

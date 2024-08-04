@@ -25,21 +25,21 @@ OpenGemini 是一款云原生分布式时序数据库。获取更多信息，请
 <i><font color=gray>示例使用点引用法，用户可结合具体需要选择适合的引用方式。</font></i>
 
 ```go
-import . "github.com/openGemini/opengemini-client-go/opengemini"
+import "github.com/openGemini/opengemini-client-go/opengemini"
 ```
 
 创建客户端：
 
 ```go
-config := &Config{
-	Addresses: []*Address{
+config := &opengemini.Config{
+	Addresses: []*opengemini.Address{
 		{
 			Host: "127.0.0.1",
 			Port: 8086,
 		},
 	},
 }
-client, err := NewClient(config)
+client, err := opengemini.NewClient(config)
 if err != nil {
 	fmt.Println(err)
 }
@@ -60,7 +60,7 @@ if err != nil {
 
 ```go
 exampleMeasurement := "ExampleMeasurement"
-point := &Point{}
+point := &opengemini.Point{}
 point.Measurement = exampleMeasurement
 point.AddTag("Weather", "foggy")
 point.AddField("Humidity", 87)
@@ -79,11 +79,11 @@ if err != nil {
 
 ```go
 exampleMeasurement := "ExampleMeasurement"
-var pointList []*Point
+var pointList []*opengemini.Point
 var tagList []string
 tagList = append(tagList, "sunny", "rainy", "windy")
 for i := 0; i < 10; i++ {
-	p := &Point{}
+	p := &opengemini.Point{}
 	p.Measurement = exampleMeasurement
 	p.AddTag("Weather", tagList[rand.Int31n(3)])
 	p.AddField("Humidity", rand.Int31n(100))
@@ -101,7 +101,7 @@ if err != nil {
 执行查询：
 
 ```go
-q := Query{
+q := opengemini.Query{
 	Database: exampleDatabase,
 	Command:  "select * from " + exampleMeasurement,
 }
