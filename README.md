@@ -25,21 +25,21 @@ Import the Client Library:
 <i><font color=gray>The example code use the dot import, but the user should choose the package import method according to their own needs</font></i>
 
 ```go
-import . "github.com/openGemini/opengemini-client-go/opengemini"
+import "github.com/openGemini/opengemini-client-go/opengemini"
 ```
 
 Create a Client:
 
 ```go
-config := &Config{
-	Addresses: []*Address{
+config := &opengemini.Config{
+	Addresses: []*opengemini.Address{
 		{
 			Host: "127.0.0.1",
 			Port: 8086,
 		},
 	},
 }
-client, err := NewClient(config)
+client, err := opengemini.NewClient(config)
 if err != nil {
 	fmt.Println(err)
 }
@@ -60,7 +60,7 @@ Write single point:
 
 ```go
 exampleMeasurement := "ExampleMeasurement"
-point := &Point{}
+point := &opengemini.Point{}
 point.Measurement = exampleMeasurement
 point.AddTag("Weather", "foggy")
 point.AddField("Humidity", 87)
@@ -79,11 +79,11 @@ Write batch points:
 
 ```go
 exampleMeasurement := "ExampleMeasurement"
-var pointList []*Point
+var pointList []*opengemini.Point
 var tagList []string
 tagList = append(tagList, "sunny", "rainy", "windy")
 for i := 0; i < 10; i++ {
-	p := &Point{}
+	p := &opengemini.Point{}
 	p.Measurement=exampleMeasurement
 	p.AddTag("Weather", tagList[rand.Int31n(3)])
 	p.AddField("Humidity", rand.Int31n(100))
@@ -101,7 +101,7 @@ if err != nil {
 Do a query:
 
 ```go
-q := Query{
+q := opengemini.Query{
 	Database: exampleDatabase,
 	Command:  "select * from " + exampleMeasurement,
 }
