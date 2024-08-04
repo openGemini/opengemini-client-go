@@ -15,7 +15,7 @@ import (
 type WriteCallback func(error)
 
 // CallbackDummy if user don't want to handle WritePoint error, could use this function as empty callback
-func CallbackDummy(error) {
+func CallbackDummy(_ error) {
 	// Do nothing
 }
 
@@ -50,12 +50,7 @@ func (c *client) WritePointWithRp(database string, rp string, point *Point, call
 				if loaded {
 					close(newCollection)
 				} else {
-					select {
-					case <-c.batchContext.Done():
-						return c.batchContext.Err()
-					default:
-						go c.internalBatchSend(c.batchContext, database, rp, actual.(chan *sendBatchWithCB))
-					}
+					go c.internalBatchSend(c.batchContext, database, rp, actual.(chan *sendBatchWithCB))
 				}
 				value = actual
 			}
