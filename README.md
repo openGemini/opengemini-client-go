@@ -4,7 +4,7 @@ English | [简体中文](README_CN.md)
 
 ![License](https://img.shields.io/badge/license-Apache2.0-green) ![Language](https://img.shields.io/badge/Language-Go-blue.svg) [![version](https://img.shields.io/github/v/tag/opengemini/opengemini-client-go?label=release&color=blue)](https://github.com/opengemini/opengemini-client-go/releases) [![Godoc](http://img.shields.io/badge/docs-go.dev-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/openGemini/opengemini-client-go)
 
-`opengemini-client-go` is a Golang client for OpenGemini.
+`opengemini-client-go` is a Golang client for OpenGemini
 
 ## Design Doc
 
@@ -21,8 +21,6 @@ OpenGemini is a cloud-native distributed time series database, find more informa
 ## Usage
 
 Import the Client Library:
-
-<i><font color=gray>The example code use the dot import, but the user should choose the package import method according to their own needs</font></i>
 
 ```go
 import "github.com/openGemini/opengemini-client-go/opengemini"
