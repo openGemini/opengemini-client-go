@@ -22,13 +22,15 @@ OpenGemini is a cloud-native distributed time series database, find more informa
 
 Import the Client Library:
 
-```go
-import "github.com/openGemini/opengemini-client-go/opengemini"
+```
+go get github.com/openGemini/opengemini-client-go/opengemini
 ```
 
 Create a Client:
 
 ```go
+import "github.com/openGemini/opengemini-client-go/opengemini"
+
 config := &opengemini.Config{
 	Addresses: []*opengemini.Address{
 		{

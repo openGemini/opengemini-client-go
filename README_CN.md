@@ -22,13 +22,15 @@ OpenGemini 是一款云原生分布式时序数据库。获取更多信息，请
 
 引入客户端库：
 
-```go
-import "github.com/openGemini/opengemini-client-go/opengemini"
+```
+go get github.com/openGemini/opengemini-client-go/opengemini
 ```
 
 创建客户端：
 
 ```go
+import "github.com/openGemini/opengemini-client-go/opengemini"
+
 config := &opengemini.Config{
 	Addresses: []*opengemini.Address{
 		{
