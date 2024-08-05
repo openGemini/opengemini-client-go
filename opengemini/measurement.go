@@ -9,6 +9,19 @@ type ValuesResult struct {
 	Values      []interface{}
 }
 
+func (c *client) DropMeasurement(database, retentionPolicy, measurement string) error {
+	if len(database) == 0 {
+		return errors.New("empty database name")
+	}
+	if len(retentionPolicy) == 0 {
+		return errors.New("empty retention policy")
+	}
+	if len(measurement) == 0 {
+		return errors.New("empty measurement name")
+	}
+	panic("implement me")
+}
+
 func (c *client) ShowTagKeys(database, command string) ([]ValuesResult, error) {
 	if len(database) == 0 {
 		return nil, errors.New("empty database name")
