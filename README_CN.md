@@ -20,6 +20,12 @@ OpenGemini 是一款云原生分布式时序数据库。获取更多信息，请
 
 ## 用法
 
+安装客户端库:
+
+```
+go get github.com/openGemini/opengemini-client-go
+```
+
 引入客户端库：
 
 ```go

@@ -7,13 +7,13 @@ type ValuesResult struct {
 
 func (c *client) DropMeasurement(database, retentionPolicy, measurement string) error {
 	if len(database) == 0 {
-		return errors.New("empty database name")
+		return ErrEmptyDatabaseName
 	}
 	if len(retentionPolicy) == 0 {
-		return errors.New("empty retention policy")
+		return ErrRetentionPolicy
 	}
 	if len(measurement) == 0 {
-		return errors.New("empty measurement name")
+		return ErrEmptyMeasurement
 	}
 	panic("implement me")
 }

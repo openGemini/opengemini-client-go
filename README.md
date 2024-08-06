@@ -20,6 +20,12 @@ OpenGemini is a cloud-native distributed time series database, find more informa
 
 ## Usage
 
+Install the client library:
+
+```
+go get github.com/openGemini/opengemini-client-go
+```
+
 Import the Client Library:
 
 ```go
