@@ -15,6 +15,8 @@ import (
 type WriteCallback func(error)
 
 // CallbackDummy if user don't want to handle WritePoint error, could use this function as empty callback
+//
+//goland:noinspection GoUnusedExportedFunction
 func CallbackDummy(_ error) {
 	// Do nothing
 }

@@ -43,5 +43,6 @@ func main() {
 	prometheus.MustRegister(clientA.ExposeMetrics(), clientB.ExposeMetrics())
 
 	http.Handle("/metrics", promhttp.Handler())
+	//goland:noinspection GoUnhandledErrorResult
 	http.ListenAndServe(":8089", nil)
 }

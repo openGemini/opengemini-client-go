@@ -1,14 +1,13 @@
 package opengemini
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
 
 func (c *client) CreateDatabase(database string) error {
 	if len(database) == 0 {
-		return errors.New("empty database name")
+		return ErrEmptyDatabaseName
 	}
 
 	cmd := fmt.Sprintf("CREATE DATABASE \"%s\"", database)
@@ -27,7 +26,7 @@ func (c *client) CreateDatabase(database string) error {
 
 func (c *client) CreateDatabaseWithRp(database string, rpConfig RpConfig) error {
 	if len(database) == 0 {
-		return errors.New("empty database name")
+		return ErrEmptyDatabaseName
 	}
 
 	var buf strings.Builder
@@ -84,7 +83,7 @@ func (c *client) ShowDatabases() ([]string, error) {
 
 func (c *client) DropDatabase(database string) error {
 	if len(database) == 0 {
-		return errors.New("empty database name")
+		return ErrEmptyDatabaseName
 	}
 	cmd := fmt.Sprintf("DROP DATABASE \"%s\"", database)
 	queryResult, err := c.queryPost(Query{Command: cmd})
