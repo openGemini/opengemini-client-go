@@ -191,8 +191,8 @@ func TestClientWritePointWithRetentionPolicy(t *testing.T) {
 		Command:         "select * from " + point.Measurement,
 		RetentionPolicy: "testRp",
 	})
-	assert.NotNil(t, res.Results[0].Series[0].Values)
 	assert.Nil(t, err)
+	assert.NotNil(t, res.Results[0].Series[0].Values)
 }
 
 func TestWriteAssignedIntegerField(t *testing.T) {

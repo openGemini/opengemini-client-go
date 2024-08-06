@@ -1,9 +1,5 @@
 package opengemini
 
-import (
-	"errors"
-)
-
 type ValuesResult struct {
 	Measurement string
 	Values      []interface{}
@@ -11,7 +7,7 @@ type ValuesResult struct {
 
 func (c *client) ShowTagKeys(database, command string) ([]ValuesResult, error) {
 	if len(database) == 0 {
-		return nil, errors.New("empty database name")
+		return nil, ErrEmptyDatabaseName
 	}
 	tagKeyResult, err := c.showTagSeriesQuery(database, command)
 	if err != nil {
@@ -22,10 +18,10 @@ func (c *client) ShowTagKeys(database, command string) ([]ValuesResult, error) {
 
 func (c *client) ShowTagValues(database, command string) ([]ValuesResult, error) {
 	if len(database) == 0 {
-		return nil, errors.New("empty database name")
+		return nil, ErrEmptyDatabaseName
 	}
 	if len(command) == 0 {
-		return nil, errors.New("empty command")
+		return nil, ErrEmptyCommand
 	}
 
 	tagValueResult, err := c.showTagFieldQuery(database, command)
@@ -37,11 +33,11 @@ func (c *client) ShowTagValues(database, command string) ([]ValuesResult, error)
 
 func (c *client) ShowFieldKeys(database, command string) ([]ValuesResult, error) {
 	if len(database) == 0 {
-		return nil, errors.New("empty database name")
+		return nil, ErrEmptyDatabaseName
 	}
 
 	if len(command) == 0 {
-		return nil, errors.New("empty command")
+		return nil, ErrEmptyCommand
 	}
 
 	tagKeyResult, err := c.showTagFieldQuery(database, command)
@@ -53,7 +49,7 @@ func (c *client) ShowFieldKeys(database, command string) ([]ValuesResult, error)
 
 func (c *client) ShowSeries(database, command string) ([]string, error) {
 	if len(database) == 0 {
-		return nil, errors.New("empty database name")
+		return nil, ErrEmptyDatabaseName
 	}
 	seriesResult, err := c.showTagSeriesQuery(database, command)
 	if err != nil {
