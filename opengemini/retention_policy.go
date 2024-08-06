@@ -108,8 +108,9 @@ func NewRetentionPolicy(value SeriesValue) *RetentionPolicy {
 // CreateRetentionPolicy Create retention policy
 func (c *client) CreateRetentionPolicy(database string, rpConfig RpConfig, isDefault bool) error {
 	if len(database) == 0 {
-		return errors.New("empty database name")
+		return ErrEmptyDatabaseName
 	}
+
 	var buf strings.Builder
 	buf.WriteString(fmt.Sprintf("CREATE RETENTION POLICY %s ON \"%s\" DURATION %s REPLICATION 1", rpConfig.Name, database, rpConfig.Duration))
 	if len(rpConfig.ShardGroupDuration) > 0 {
@@ -142,7 +143,7 @@ func (c *client) ShowRetentionPolicies(database string) ([]RetentionPolicy, erro
 		rpResult            []RetentionPolicy
 	)
 	if len(database) == 0 {
-		return nil, errors.New("empty database name")
+		return nil, ErrEmptyDatabaseName
 	}
 
 	queryResult, err := c.Query(Query{Database: database, Command: ShowRetentionPolicy})
@@ -161,11 +162,11 @@ func (c *client) ShowRetentionPolicies(database string) ([]RetentionPolicy, erro
 
 // DropRetentionPolicy Drop retention policy
 func (c *client) DropRetentionPolicy(database, retentionPolicy string) error {
-	if len(retentionPolicy) == 0 {
-		return errors.New("empty retention policy")
-	}
 	if len(database) == 0 {
-		return errors.New("empty database name")
+		return ErrEmptyDatabaseName
+	}
+	if len(retentionPolicy) == 0 {
+		return ErrRetentionPolicy
 	}
 
 	cmd := fmt.Sprintf("DROP RETENTION POLICY %s ON \"%s\"", retentionPolicy, database)
