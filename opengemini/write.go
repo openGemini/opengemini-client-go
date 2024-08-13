@@ -14,21 +14,6 @@ import (
 
 type WriteCallback func(error)
 
-// CallbackDummy if user don't want to handle WritePoint error, could use this function as empty callback
-//
-//goland:noinspection GoUnusedExportedFunction
-func CallbackDummy(_ error) {
-	// Do nothing
-}
-
-func (c *client) WriteBatchPoints(ctx context.Context, database string, bp []*Point) error {
-	return c.WriteBatchPointsWithRp(ctx, database, "", bp)
-}
-
-func (c *client) WritePoint(database string, point *Point, callback WriteCallback) error {
-	return c.WritePointWithRp(database, "", point, callback)
-}
-
 type sendBatchWithCB struct {
 	point    *Point
 	callback WriteCallback
@@ -37,6 +22,21 @@ type sendBatchWithCB struct {
 type dbRp struct {
 	db string
 	rp string
+}
+
+// CallbackDummy if user don't want to handle WritePoint error, could use this function as empty callback
+//
+//goland:noinspection GoUnusedExportedFunction
+func CallbackDummy(_ error) {
+	// Do nothing
+}
+
+func (c *client) WritePoint(database string, point *Point, callback WriteCallback) error {
+	return c.WritePointWithRp(database, "", point, callback)
+}
+
+func (c *client) WriteBatchPoints(ctx context.Context, database string, bp []*Point) error {
+	return c.WriteBatchPointsWithRp(ctx, database, "", bp)
 }
 
 func (c *client) WritePointWithRp(database string, rp string, point *Point, callback WriteCallback) error {

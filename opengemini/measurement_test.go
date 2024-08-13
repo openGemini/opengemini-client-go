@@ -1,41 +1,95 @@
 package opengemini
 
 import (
-	"fmt"
-	"github.com/stretchr/testify/assert"
+	"context"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
-func TestClientShowTagKeys(t *testing.T) {
+func TestClientDropMeasurementExistSpecifyRp(t *testing.T) {
 	c := testDefaultClient(t)
 	databaseName := randomDatabaseName()
+	retentionPolicy := randomRetentionPolicy()
+	measurement := randomMeasurement()
 	err := c.CreateDatabase(databaseName)
 	require.Nil(t, err)
-	measurement := randomMeasurement()
-	cmd := fmt.Sprintf("CREATE MEASUREMENT %s (tag1 TAG,tag2 TAG,tag3 TAG, field1 INT64 FIELD, field2 BOOL, field3 STRING, field4 FLOAT64)", measurement)
-	_, err = c.Query(Query{Command: cmd, Database: databaseName})
-	assert.Nil(t, err)
-	showKeyCmd := fmt.Sprintf("SHOW TAG KEYS FROM %s limit 3 OFFSET 0", measurement)
-	tagKeyResult, err := c.ShowTagKeys(databaseName, showKeyCmd)
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(tagKeyResult))
+	err = c.CreateRetentionPolicy(databaseName, RpConfig{Name: retentionPolicy, Duration: "3d"}, false)
+	require.Nil(t, err)
+	err = c.WriteBatchPointsWithRp(context.Background(), databaseName, retentionPolicy, []*Point{
+		{
+			Measurement: measurement,
+			Precision:   0,
+			Time:        time.Time{},
+			Tags:        nil,
+			Fields:      nil,
+		},
+	})
+	require.Nil(t, err)
+	err = c.DropMeasurement(databaseName, retentionPolicy, measurement)
+	require.Nil(t, err)
+	err = c.DropRetentionPolicy(databaseName, retentionPolicy)
+	require.Nil(t, err)
+}
+
+func TestClientDropMeasurementNonExistent(t *testing.T) {
+	c := testDefaultClient(t)
+	databaseName := randomDatabaseName()
+	retentionPolicy := randomRetentionPolicy()
+	err := c.CreateDatabase(databaseName)
+	require.Nil(t, err)
+	err = c.CreateRetentionPolicy(databaseName, RpConfig{Name: retentionPolicy, Duration: "3d"}, false)
+	require.Nil(t, err)
+	err = c.DropMeasurement(databaseName, retentionPolicy, "non_existent_measurement")
+	require.Nil(t, err)
+	err = c.DropRetentionPolicy(databaseName, retentionPolicy)
+	require.Nil(t, err)
 	err = c.DropDatabase(databaseName)
 	require.Nil(t, err)
 }
 
-func TestClient_ShowFieldKeys(t *testing.T) {
+func TestClientDropMeasurementEmptyMeasurementName(t *testing.T) {
 	c := testDefaultClient(t)
 	databaseName := randomDatabaseName()
+	retentionPolicy := randomRetentionPolicy()
 	err := c.CreateDatabase(databaseName)
 	require.Nil(t, err)
-	measurement := randomMeasurement()
-	cmd := fmt.Sprintf("CREATE MEASUREMENT %s (tag1 TAG,tag2 TAG,tag3 TAG, field1 INT64 FIELD, field2 BOOL, field3 STRING, field4 FLOAT64)", measurement)
-	_, err = c.Query(Query{Command: cmd, Database: databaseName})
-	assert.Nil(t, err)
-	tagFieldResult, err := c.ShowFieldKeys(databaseName, fmt.Sprintf("SHOW FIELD KEYS FROM %s", measurement))
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(tagFieldResult))
+	err = c.CreateRetentionPolicy(databaseName, RpConfig{Name: retentionPolicy, Duration: "3d"}, false)
+	require.Nil(t, err)
+	err = c.DropMeasurement(databaseName, retentionPolicy, "")
+	require.NotNil(t, err)
+	err = c.DropRetentionPolicy(databaseName, retentionPolicy)
+	require.Nil(t, err)
 	err = c.DropDatabase(databaseName)
 	require.Nil(t, err)
+}
+
+func TestClientDropMeasurementEmptyRetentionPolicy(t *testing.T) {
+	c := testDefaultClient(t)
+	databaseName := randomDatabaseName()
+	measurement := randomMeasurement()
+	err := c.CreateDatabase(databaseName)
+	require.Nil(t, err)
+	err = c.WriteBatchPoints(context.Background(), databaseName, []*Point{
+		{
+			Measurement: measurement,
+			Precision:   0,
+			Time:        time.Time{},
+			Tags:        nil,
+			Fields:      nil,
+		},
+	})
+	require.Nil(t, err)
+	err = c.DropMeasurement(databaseName, "", measurement)
+	require.NotNil(t, err)
+	err = c.DropDatabase(databaseName)
+	require.Nil(t, err)
+}
+
+func TestClientDropMeasurementEmptyDatabaseName(t *testing.T) {
+	c := testDefaultClient(t)
+	retentionPolicy := randomRetentionPolicy()
+	measurement := randomMeasurement()
+	err := c.DropMeasurement("", retentionPolicy, measurement)
+	require.NotNil(t, err)
 }
