@@ -12,6 +12,15 @@ type ValuesResult struct {
 	Values      []interface{}
 }
 
+func (c *client) ShowMeasurements(database, retentionPolicy string) ([]string, error) {
+	err := CheckDatabaseAndPolicy(database, retentionPolicy)
+	if err != nil {
+		return nil, err
+	}
+
+	panic("implement me")
+}
+
 func (c *client) DropMeasurement(database, retentionPolicy, measurement string) error {
 	err := CheckDatabaseAndPolicyAndMeasurement(database, retentionPolicy, measurement)
 	if err != nil {

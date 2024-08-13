@@ -46,6 +46,7 @@ type Client interface {
 	ShowRetentionPolicies(database string) ([]RetentionPolicy, error)
 	DropRetentionPolicy(database, retentionPolicy string) error
 
+	ShowMeasurements(database, retentionPolicy string) ([]string, error)
 	DropMeasurement(database, retentionPolicy, measurement string) error
 
 	ShowTagKeys(database, command string) ([]ValuesResult, error)
