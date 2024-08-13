@@ -65,57 +65,49 @@ func (c *client) WritePointWithRp(database string, rp string, point *Point, call
 		return nil
 	}
 
+	buffer, err := c.encodePoint(point)
+	if err != nil {
+		return err
+	}
+
+	return c.writeBytesBuffer(c.batchContext, database, rp, buffer)
+}
+
+func (c *client) WriteBatchPointsWithRp(ctx context.Context, database string, rp string, bp []*Point) error {
+	buffer, err := c.encodeBatchPoints(bp)
+	if err != nil {
+		return err
+	}
+
+	return c.writeBytesBuffer(ctx, database, rp, buffer)
+}
+
+func (c *client) encodePoint(point *Point) (*bytes.Buffer, error) {
 	var buffer bytes.Buffer
 	writer := c.newWriter(&buffer)
 
 	enc := NewLineProtocolEncoder(writer)
 	if err := enc.Encode(point); err != nil {
-		return errors.New("encode failed, error: " + err.Error())
+		return nil, errors.New("encode failed, error: " + err.Error())
 	}
 
-	if closer, ok := writer.(io.Closer); ok {
-		if err := closer.Close(); err != nil {
-			return errors.New("writer close failed, error: " + err.Error())
-		}
-	}
-
-	resp, err := c.innerWrite(context.TODO(), database, rp, &buffer)
-	if err != nil {
-		callback(errors.New("innerWrite request failed, error: " + err.Error()))
-		return nil
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusNoContent {
-		errorBody, err := io.ReadAll(resp.Body)
-		if err != nil {
-			callback(errors.New("writePoint read resp body failed, error: " + err.Error()))
-		} else {
-			callback(fmt.Errorf("writePoint error resp, code: " + resp.Status + "body: " + string(errorBody)))
-		}
-	} else {
-		callback(nil)
-	}
-
-	return nil
+	return &buffer, nil
 }
 
-func (c *client) WriteBatchPointsWithRp(ctx context.Context, database string, rp string, bp []*Point) error {
+func (c *client) encodeBatchPoints(bp []*Point) (*bytes.Buffer, error) {
 	var buffer bytes.Buffer
 	writer := c.newWriter(&buffer)
 
 	enc := NewLineProtocolEncoder(writer)
 	if err := enc.BatchEncode(bp); err != nil {
-		return errors.New("batchEncode failed, error: " + err.Error())
+		return nil, errors.New("batchEncode failed, error: " + err.Error())
 	}
 
-	if closer, ok := writer.(io.Closer); ok {
-		if err := closer.Close(); err != nil {
-			return errors.New("writer close failed, error: " + err.Error())
-		}
-	}
+	return &buffer, nil
+}
 
-	resp, err := c.innerWrite(ctx, database, rp, &buffer)
+func (c *client) writeBytesBuffer(ctx context.Context, database string, rp string, buffer *bytes.Buffer) error {
+	resp, err := c.innerWrite(ctx, database, rp, buffer)
 	if err != nil {
 		return errors.New("innerWrite request failed, error: " + err.Error())
 	}
