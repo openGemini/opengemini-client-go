@@ -28,7 +28,7 @@ func (result *QueryResult) hasError() error {
 	return nil
 }
 
-func (result *QueryResult) convertRetentionPolicy() []RetentionPolicy {
+func (result *QueryResult) convertRetentionPolicyList() []RetentionPolicy {
 	if len(result.Results) == 0 || len(result.Results[0].Series) == 0 {
 		return []RetentionPolicy{}
 	}
@@ -46,5 +46,21 @@ func (result *QueryResult) convertRetentionPolicy() []RetentionPolicy {
 		}
 	}
 	return retentionPolicy
+}
 
+func (result *QueryResult) convertMeasurements() []string {
+	if len(result.Results) == 0 || len(result.Results[0].Series) == 0 {
+		return []string{}
+	}
+	var (
+		seriesValues = result.Results[0].Series[0].Values
+		measurements = make([]string, 0, len(seriesValues))
+	)
+
+	for _, v := range seriesValues {
+		if measurementName, ok := v[0].(string); ok {
+			measurements = append(measurements, measurementName)
+		}
+	}
+	return measurements
 }

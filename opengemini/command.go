@@ -1,7 +1,7 @@
 package opengemini
 
 func (c *client) ShowTagKeys(database, command string) ([]ValuesResult, error) {
-	err := CheckDatabaseAndCommand(database, command)
+	err := checkDatabaseAndCommand(database, command)
 	if err != nil {
 		return nil, err
 	}
@@ -14,7 +14,7 @@ func (c *client) ShowTagKeys(database, command string) ([]ValuesResult, error) {
 }
 
 func (c *client) ShowTagValues(database, command string) ([]ValuesResult, error) {
-	err := CheckDatabaseAndCommand(database, command)
+	err := checkDatabaseAndCommand(database, command)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func (c *client) ShowTagValues(database, command string) ([]ValuesResult, error)
 }
 
 func (c *client) ShowFieldKeys(database, command string) ([]ValuesResult, error) {
-	err := CheckDatabaseAndCommand(database, command)
+	err := checkDatabaseAndCommand(database, command)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (c *client) ShowFieldKeys(database, command string) ([]ValuesResult, error)
 }
 
 func (c *client) ShowSeries(database, command string) ([]string, error) {
-	err := CheckDatabaseAndCommand(database, command)
+	err := checkDatabaseAndCommand(database, command)
 	if err != nil {
 		return nil, err
 	}
