@@ -19,7 +19,7 @@ type metrics struct {
 	queryLatency prometheus.Summary
 	// writeLatency calculate the average of the writes, unit milliseconds
 	writeLatency prometheus.Summary
-	// queryDatabaseCounter Count queries and classify using measurement
+	// queryDatabaseCounter count queries and classify using measurement
 	queryDatabaseCounter *prometheus.CounterVec
 	// writeDatabaseCounter count write requests and classify using measurement
 	writeDatabaseCounter *prometheus.CounterVec
