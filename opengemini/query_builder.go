@@ -144,9 +144,11 @@ func (q *QueryBuilder) buildExpression(expr Expression) string {
 	case *ConstantExpression:
 		return fmt.Sprintf("%v", e.Value)
 	case *ArithmeticExpression:
-		left := q.buildExpression(e.Left)
-		right := q.buildExpression(e.Right)
-		return fmt.Sprintf("(%s %s %s)", left, e.Operator, right)
+		var operandStrings []string
+		for _, operand := range e.Operands {
+			operandStrings = append(operandStrings, q.buildExpression(operand))
+		}
+		return fmt.Sprintf("(%s)", strings.Join(operandStrings, fmt.Sprintf(" %s ", e.Operator)))
 	default:
 		return ""
 	}

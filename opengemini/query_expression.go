@@ -37,15 +37,13 @@ func NewFunctionExpression(function FunctionEnum, arguments ...Expression) *Func
 }
 
 type ArithmeticExpression struct {
-	Left     Expression
 	Operator ArithmeticOperator
-	Right    Expression
+	Operands []Expression
 }
 
-func NewArithmeticExpression(left Expression, operator ArithmeticOperator, right Expression) *ArithmeticExpression {
+func NewArithmeticExpression(operator ArithmeticOperator, operands ...Expression) *ArithmeticExpression {
 	return &ArithmeticExpression{
-		Left:     left,
 		Operator: operator,
-		Right:    right,
+		Operands: operands,
 	}
 }

@@ -42,8 +42,10 @@ func TestQueryBuilderSelectWithArithmetic(t *testing.T) {
 	qb := CreateQueryBuilder()
 
 	waterLevelField := NewFieldExpression("water_level")
-	multipliedByFour := NewArithmeticExpression(waterLevelField, Multiply, NewConstantExpression(4))
-	addTwo := NewArithmeticExpression(multipliedByFour, Add, NewConstantExpression(2))
+
+	multipliedByFour := NewArithmeticExpression(Multiply, waterLevelField, NewConstantExpression(4))
+
+	addTwo := NewArithmeticExpression(Add, multipliedByFour, NewConstantExpression(2))
 
 	query := qb.Select(addTwo).From("h2o_feet").Limit(10).Build()
 
@@ -89,7 +91,7 @@ func TestQueryBuilderSelectWithGroupBy(t *testing.T) {
 
 	query := qb.Select(meanFunction).From("h2o_feet").GroupBy(NewFieldExpression("location")).Build()
 
-	expectedQuery := `SELECT FunctionMean("water_level") FROM "h2o_feet" GROUP BY "location"`
+	expectedQuery := `SELECT MEAN("water_level") FROM "h2o_feet" GROUP BY "location"`
 
 	require.Equal(t, expectedQuery, query.Command)
 }
