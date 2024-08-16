@@ -3,7 +3,7 @@ package opengemini
 type FunctionEnum string
 
 const (
-	FunctionMean  FunctionEnum = "FunctionMean"
+	FunctionMean  FunctionEnum = "MEAN"
 	FunctionCount FunctionEnum = "COUNT"
 	FunctionSum   FunctionEnum = "SUM"
 	FunctionMin   FunctionEnum = "MIN"
