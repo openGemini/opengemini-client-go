@@ -2,6 +2,7 @@ package opengemini
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -13,16 +14,27 @@ type ValuesResult struct {
 }
 
 func (c *client) ShowMeasurements(database, retentionPolicy string) ([]string, error) {
-	err := CheckDatabaseAndPolicy(database, retentionPolicy)
+	err := checkDatabaseName(database)
 	if err != nil {
 		return nil, err
 	}
 
-	panic("implement me")
+	queryResult, err := c.queryPost(Query{Database: database, RetentionPolicy: retentionPolicy, Command: "SHOW MEASUREMENTS"})
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = queryResult.hasError()
+	if err != nil {
+		return nil, fmt.Errorf("show measurements err: %s", err)
+	}
+
+	return queryResult.convertMeasurements(), nil
 }
 
 func (c *client) DropMeasurement(database, retentionPolicy, measurement string) error {
-	err := CheckDatabaseAndPolicyAndMeasurement(database, retentionPolicy, measurement)
+	err := checkDatabaseAndMeasurement(database, measurement)
 	if err != nil {
 		return err
 	}

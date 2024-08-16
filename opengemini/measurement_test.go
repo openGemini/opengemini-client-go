@@ -22,12 +22,21 @@ func TestClientDropMeasurementExistSpecifyRp(t *testing.T) {
 			Precision:   0,
 			Time:        time.Time{},
 			Tags:        nil,
-			Fields:      nil,
+			Fields: map[string]interface{}{
+				"value": 1,
+			},
 		},
 	})
 	require.Nil(t, err)
+	time.Sleep(time.Second * 5)
+	measurements, err := c.ShowMeasurements(databaseName, retentionPolicy)
+	require.Nil(t, err)
+	require.Contains(t, measurements, measurement)
 	err = c.DropMeasurement(databaseName, retentionPolicy, measurement)
 	require.Nil(t, err)
+	measurements, err = c.ShowMeasurements(databaseName, retentionPolicy)
+	require.Nil(t, err)
+	require.NotContains(t, measurements, measurement)
 	err = c.DropRetentionPolicy(databaseName, retentionPolicy)
 	require.Nil(t, err)
 }
@@ -76,12 +85,21 @@ func TestClientDropMeasurementEmptyRetentionPolicy(t *testing.T) {
 			Precision:   0,
 			Time:        time.Time{},
 			Tags:        nil,
-			Fields:      nil,
+			Fields: map[string]interface{}{
+				"value": 1,
+			},
 		},
 	})
 	require.Nil(t, err)
+	time.Sleep(time.Second * 5)
+	measurements, err := c.ShowMeasurements(databaseName, "")
+	require.Nil(t, err)
+	require.Contains(t, measurements, measurement)
 	err = c.DropMeasurement(databaseName, "", measurement)
-	require.NotNil(t, err)
+	require.Nil(t, err)
+	measurements, err = c.ShowMeasurements(databaseName, "")
+	require.Nil(t, err)
+	require.NotContains(t, measurements, measurement)
 	err = c.DropDatabase(databaseName)
 	require.Nil(t, err)
 }

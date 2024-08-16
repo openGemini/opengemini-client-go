@@ -6,7 +6,7 @@ import (
 )
 
 func (c *client) CreateDatabase(database string) error {
-	err := CheckDatabaseName(database)
+	err := checkDatabaseName(database)
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func (c *client) CreateDatabase(database string) error {
 }
 
 func (c *client) CreateDatabaseWithRp(database string, rpConfig RpConfig) error {
-	err := CheckDatabaseName(database)
+	err := checkDatabaseName(database)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (c *client) ShowDatabases() ([]string, error) {
 }
 
 func (c *client) DropDatabase(database string) error {
-	err := CheckDatabaseName(database)
+	err := checkDatabaseName(database)
 	if err != nil {
 		return err
 	}

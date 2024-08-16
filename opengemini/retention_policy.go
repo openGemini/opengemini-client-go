@@ -107,7 +107,7 @@ func NewRetentionPolicy(value SeriesValue) *RetentionPolicy {
 
 // CreateRetentionPolicy Create retention policy
 func (c *client) CreateRetentionPolicy(database string, rpConfig RpConfig, isDefault bool) error {
-	err := CheckDatabaseAndPolicy(database, rpConfig.Name)
+	err := checkDatabaseAndPolicy(database, rpConfig.Name)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func (c *client) CreateRetentionPolicy(database string, rpConfig RpConfig, isDef
 
 // ShowRetentionPolicies Show retention policy
 func (c *client) ShowRetentionPolicies(database string) ([]RetentionPolicy, error) {
-	err := CheckDatabaseName(database)
+	err := checkDatabaseName(database)
 	if err != nil {
 		return nil, err
 	}
@@ -159,13 +159,13 @@ func (c *client) ShowRetentionPolicies(database string) ([]RetentionPolicy, erro
 		return rpResult, fmt.Errorf("show retention policy err: %s", err)
 	}
 
-	rpResult = queryResult.convertRetentionPolicy()
+	rpResult = queryResult.convertRetentionPolicyList()
 	return rpResult, nil
 }
 
 // DropRetentionPolicy Drop retention policy
 func (c *client) DropRetentionPolicy(database, retentionPolicy string) error {
-	err := CheckDatabaseAndPolicy(database, retentionPolicy)
+	err := checkDatabaseAndPolicy(database, retentionPolicy)
 	if err != nil {
 		return err
 	}
