@@ -4,9 +4,17 @@ import (
 	"context"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 )
+
+func TestClientWriteEmptyBatchPoints(t *testing.T) {
+	c := testDefaultClient(t)
+
+	err := c.WriteBatchPoints(context.Background(), "database", make([]*Point, 0))
+	require.NoError(t, err)
+}
 
 func TestClientWriteBatchPoints(t *testing.T) {
 	c := testDefaultClient(t)

@@ -74,6 +74,10 @@ func (c *client) WritePointWithRp(database string, rp string, point *Point, call
 }
 
 func (c *client) WriteBatchPointsWithRp(ctx context.Context, database string, rp string, bp []*Point) error {
+	if len(bp) == 0 {
+		return nil
+	}
+
 	buffer, err := c.encodeBatchPoints(bp)
 	if err != nil {
 		return err
