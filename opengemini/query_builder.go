@@ -157,23 +157,7 @@ func (q *QueryBuilder) buildExpression(expr Expression) string {
 func (q *QueryBuilder) buildCondition(cond Condition) string {
 	switch c := cond.(type) {
 	case *ComparisonCondition:
-		// Map ComparisonOperator to SQL symbols
-		var operator string
-		switch c.Operator {
-		case Equals:
-			operator = "="
-		case NotEquals:
-			operator = "<>"
-		case GreaterThan:
-			operator = ">"
-		case LessThan:
-			operator = "<"
-		case GreaterThanOrEquals:
-			operator = ">="
-		case LessThanOrEquals:
-			operator = "<="
-		}
-		return fmt.Sprintf(`"%s" %s '%v'`, c.Column, operator, c.Value)
+		return fmt.Sprintf(`"%s" %s '%v'`, c.Column, c.Operator, c.Value)
 	case *CompositeCondition:
 		var parts []string
 		for _, condition := range c.Conditions {

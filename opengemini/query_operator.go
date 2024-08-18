@@ -3,12 +3,14 @@ package opengemini
 type ComparisonOperator string
 
 const (
-	Equals              ComparisonOperator = "EQUALS"
-	NotEquals           ComparisonOperator = "NOT_EQUALS"
-	GreaterThan         ComparisonOperator = "GREATER_THAN"
-	LessThan            ComparisonOperator = "LESS_THAN"
-	GreaterThanOrEquals ComparisonOperator = "GREATER_THAN_OR_EQUALS"
-	LessThanOrEquals    ComparisonOperator = "LESS_THAN_OR_EQUALS"
+	Equals              ComparisonOperator = "="
+	NotEquals           ComparisonOperator = "<>"
+	GreaterThan         ComparisonOperator = ">"
+	LessThan            ComparisonOperator = "<"
+	GreaterThanOrEquals ComparisonOperator = ">="
+	LessThanOrEquals    ComparisonOperator = "<="
+	Match               ComparisonOperator = "=~"
+	NotMatch            ComparisonOperator = "!~"
 )
 
 type LogicalOperator string
