@@ -132,26 +132,7 @@ func (q *QueryBuilder) Build() *Query {
 }
 
 func (q *QueryBuilder) buildExpression(expr Expression) string {
-	switch e := expr.(type) {
-	case *FieldExpression:
-		return `"` + e.Field + `"`
-	case *FunctionExpression:
-		var args []string
-		for _, arg := range e.Arguments {
-			args = append(args, q.buildExpression(arg))
-		}
-		return fmt.Sprintf("%s(%s)", e.Function, strings.Join(args, ", "))
-	case *ConstantExpression:
-		return fmt.Sprintf("%v", e.Value)
-	case *ArithmeticExpression:
-		var operandStrings []string
-		for _, operand := range e.Operands {
-			operandStrings = append(operandStrings, q.buildExpression(operand))
-		}
-		return fmt.Sprintf("(%s)", strings.Join(operandStrings, fmt.Sprintf(" %s ", e.Operator)))
-	default:
-		return ""
-	}
+	return expr.build()
 }
 
 func (q *QueryBuilder) buildCondition(cond Condition) string {
