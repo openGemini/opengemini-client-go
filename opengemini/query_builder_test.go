@@ -131,7 +131,7 @@ func TestQueryBuilderSelectWithTimeRangeAndOrderBy(t *testing.T) {
 		Where(timeRangeCondition).
 		OrderBy(Desc).Build()
 
-	expectedQuery := `SELECT "water_level", "location" FROM "h2o_feet" WHERE ("time" >= '2019-08-18T00:00:00Z' AND "time" <= '2019-08-18T00:30:00Z') ORDER BY DESC`
+	expectedQuery := `SELECT "water_level", "location" FROM "h2o_feet" WHERE ("time" >= '2019-08-18T00:00:00Z' AND "time" <= '2019-08-18T00:30:00Z') ORDER BY time DESC`
 
 	require.Equal(t, expectedQuery, query.Command)
 }
@@ -154,7 +154,7 @@ func TestQueryBuilderSelectWithTimeRangeGroupByAndOrderBy(t *testing.T) {
 		GroupBy(groupByTime).
 		OrderBy(Desc).Build()
 
-	expectedQuery := `SELECT COUNT("water_level") FROM "h2o_feet" WHERE ("time" >= '2019-08-18T00:00:00Z' AND "time" <= '2019-08-18T00:30:00Z') GROUP BY TIME(12m) ORDER BY DESC`
+	expectedQuery := `SELECT COUNT("water_level") FROM "h2o_feet" WHERE ("time" >= '2019-08-18T00:00:00Z' AND "time" <= '2019-08-18T00:30:00Z') GROUP BY TIME(12m) ORDER BY time DESC`
 
 	require.Equal(t, expectedQuery, query.Command)
 }

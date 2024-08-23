@@ -106,7 +106,7 @@ func (q *QueryBuilder) Build() *Query {
 
 	// Build the ORDER BY part
 	if q.order != "" {
-		commandBuilder.WriteString(" ORDER BY ")
+		commandBuilder.WriteString(" ORDER BY time ")
 		commandBuilder.WriteString(string(q.order))
 	}
 
