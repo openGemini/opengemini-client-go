@@ -61,7 +61,7 @@ func TestQueryBuilderSelectWhereCondition(t *testing.T) {
 
 	query := qb.From("h2o_feet").Where(condition).Build()
 
-	expectedQuery := `SELECT * FROM "h2o_feet" WHERE "water_level" > '8'`
+	expectedQuery := `SELECT * FROM "h2o_feet" WHERE "water_level" > 8`
 
 	require.Equal(t, expectedQuery, query.Command)
 }
@@ -79,7 +79,7 @@ func TestQueryBuilderSelectWithComplexWhereCondition(t *testing.T) {
 
 	query := qb.Select(NewFieldExpression("water_level")).From("h2o_feet").Where(finalCondition).Build()
 
-	expectedQuery := `SELECT "water_level" FROM "h2o_feet" WHERE ("location" <> 'santa_monica' AND ("water_level" < '-0.57' OR "water_level" > '9.95'))`
+	expectedQuery := `SELECT "water_level" FROM "h2o_feet" WHERE ("location" <> 'santa_monica' AND ("water_level" < -0.57 OR "water_level" > 9.95))`
 
 	require.Equal(t, expectedQuery, query.Command)
 }
