@@ -71,7 +71,7 @@ func (q *QueryBuilder) Build() *Query {
 			if i > 0 {
 				commandBuilder.WriteString(", ")
 			}
-			commandBuilder.WriteString(q.buildExpression(expr))
+			commandBuilder.WriteString(expr.build())
 		}
 	} else {
 		commandBuilder.WriteString("SELECT *")
@@ -90,7 +90,7 @@ func (q *QueryBuilder) Build() *Query {
 	// Build the WHERE part
 	if q.where != nil {
 		commandBuilder.WriteString(" WHERE ")
-		commandBuilder.WriteString(q.buildCondition(q.where))
+		commandBuilder.WriteString(q.where.build())
 	}
 
 	// Build the GROUP BY part
@@ -100,7 +100,7 @@ func (q *QueryBuilder) Build() *Query {
 			if i > 0 {
 				commandBuilder.WriteString(", ")
 			}
-			commandBuilder.WriteString(q.buildExpression(expr))
+			commandBuilder.WriteString(expr.build())
 		}
 	}
 
@@ -128,24 +128,5 @@ func (q *QueryBuilder) Build() *Query {
 	// Return the final query
 	return &Query{
 		Command: commandBuilder.String(),
-	}
-}
-
-func (q *QueryBuilder) buildExpression(expr Expression) string {
-	return expr.build()
-}
-
-func (q *QueryBuilder) buildCondition(cond Condition) string {
-	switch c := cond.(type) {
-	case *ComparisonCondition:
-		return fmt.Sprintf(`"%s" %s '%v'`, c.Column, c.Operator, c.Value)
-	case *CompositeCondition:
-		var parts []string
-		for _, condition := range c.Conditions {
-			parts = append(parts, q.buildCondition(condition))
-		}
-		return fmt.Sprintf("(%s)", strings.Join(parts, fmt.Sprintf(" %s ", c.LogicalOperator)))
-	default:
-		return ""
 	}
 }
