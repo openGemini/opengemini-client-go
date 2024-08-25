@@ -99,10 +99,6 @@ func (enc *LineProtocolEncoder) writeString(s string, charsToEscape string) erro
 		c := s[i]
 
 		needEscape := strings.IndexByte(charsToEscape, c) != -1
-		if !needEscape && c == '\\' && i < len(s)-1 {
-			c1 := s[i+1]
-			needEscape = c1 == '\\' || strings.IndexByte(charsToEscape, c1) != -1
-		}
 
 		if needEscape {
 			if err := enc.writeByte('\\'); err != nil {
@@ -124,7 +120,7 @@ func (enc *LineProtocolEncoder) writeFieldValue(v interface{}) error {
 	switch v := v.(type) {
 	case string:
 		if err = enc.writeByte('"'); err == nil {
-			if err = enc.writeString(v, `"`); err == nil {
+			if err = enc.writeString(v, `"\`); err == nil {
 				err = enc.writeByte('"')
 			}
 		}
