@@ -9,18 +9,20 @@ type Expression interface {
 	build() string
 }
 
-type ConstantExpression struct {
-	Value interface{}
+type AllowedConstantTypes interface {
+	bool | int | int64 | float64 | string
 }
 
-func (c *ConstantExpression) build() string {
+type ConstantExpression[T AllowedConstantTypes] struct {
+	Value T
+}
+
+func (c *ConstantExpression[T]) build() string {
 	return fmt.Sprintf("%v", c.Value)
 }
 
-func NewConstantExpression(value interface{}) *ConstantExpression {
-	return &ConstantExpression{
-		Value: value,
-	}
+func NewConstantExpression[T AllowedConstantTypes](value T) *ConstantExpression[T] {
+	return &ConstantExpression[T]{Value: value}
 }
 
 type StarExpression struct{}
