@@ -61,6 +61,22 @@ func NewFunctionExpression(function FunctionEnum, arguments ...Expression) *Func
 	}
 }
 
+type AsExpression struct {
+    Alias string
+    OriginExpr Expression
+}
+
+func (a *AsExpression) build() string {
+    return fmt.Sprintf("%s AS \"%s\"", a.OriginExpr.build(), a.Alias)
+}
+
+func NewAsExpression(alias string, expr Expression) *AsExpression {
+    return &AsExpression{
+        Alias : alias,
+        OriginExpr: expr,
+    }
+}
+
 type ArithmeticExpression struct {
 	Operator ArithmeticOperator
 	Operands []Expression

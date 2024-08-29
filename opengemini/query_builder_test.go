@@ -203,3 +203,58 @@ func TestQueryBuilderSelectWithWhereAndTimezone(t *testing.T) {
 
 	require.Equal(t, expectedQuery, query.Command)
 }
+
+func TestQueryBuilderSelectWithAsExpression(t *testing.T) {
+	qb := CreateQueryBuilder()
+
+	waterLevelField := NewFieldExpression("water_level")
+
+	locationCondition := NewComparisonCondition("location", Equals, "santa_monica")
+	startTimeCondition := NewComparisonCondition("time", GreaterThanOrEquals, "2019-08-18T00:00:00Z")
+	endTimeCondition := NewComparisonCondition("time", LessThanOrEquals, "2019-08-18T00:18:00Z")
+
+	finalCondition := NewCompositeCondition(And, locationCondition, startTimeCondition, endTimeCondition)
+
+	location, err := time.LoadLocation("America/Chicago")
+	require.NoError(t, err)
+
+        asWL := NewAsExpression("WL", waterLevelField)
+
+	query := qb.Select(asWL).
+		From("h2o_feet").
+		Where(finalCondition).
+		Timezone(location).
+		Build()
+
+	expectedQuery := `SELECT "water_level" AS "WL" FROM "h2o_feet" WHERE ("location" = 'santa_monica' AND "time" >= '2019-08-18T00:00:00Z' AND "time" <= '2019-08-18T00:18:00Z') TZ('America/Chicago')`
+
+	require.Equal(t, expectedQuery, query.Command)
+}
+
+func TestQueryBuilderSelectWithAggregate(t *testing.T) {
+	qb := CreateQueryBuilder()
+
+	waterLevelField := NewFieldExpression("water_level")
+	countWaterLevelField := NewFunctionExpression(FunctionCount, waterLevelField)
+
+	locationCondition := NewComparisonCondition("location", Equals, "santa_monica")
+	startTimeCondition := NewComparisonCondition("time", GreaterThanOrEquals, "2019-08-18T00:00:00Z")
+	endTimeCondition := NewComparisonCondition("time", LessThanOrEquals, "2019-08-18T00:18:00Z")
+
+	finalCondition := NewCompositeCondition(And, locationCondition, startTimeCondition, endTimeCondition)
+
+	location, err := time.LoadLocation("America/Chicago")
+	require.NoError(t, err)
+
+        asWL := NewAsExpression("WL", countWaterLevelField)
+
+	query := qb.Select(asWL).
+		From("h2o_feet").
+		Where(finalCondition).
+		Timezone(location).
+		Build()
+
+	expectedQuery := `SELECT COUNT("water_level") AS "WL" FROM "h2o_feet" WHERE ("location" = 'santa_monica' AND "time" >= '2019-08-18T00:00:00Z' AND "time" <= '2019-08-18T00:18:00Z') TZ('America/Chicago')`
+
+	require.Equal(t, expectedQuery, query.Command)
+}
