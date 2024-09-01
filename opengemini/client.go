@@ -46,7 +46,28 @@ type Client interface {
 	ShowRetentionPolicies(database string) ([]RetentionPolicy, error)
 	DropRetentionPolicy(database, retentionPolicy string) error
 
-	ShowMeasurements(database, retentionPolicy string) ([]string, error)
+	// CreateMeasurement use command `CREATE MEASUREMENT` to create measurement, openGemini supports
+	// automatic table creation when writing data, but in the following three situations, tables need
+	// to be created in advance.
+	//  - specify a tag as partition key
+	//  - text search
+	//  - high series cardinality storage engine(HSCE)
+	// calling NewMeasurementBuilder().Database(databaseName).Measurement(measurement).
+	//		Create().Tags([]string{"tag1", "tag2"}).FieldMap(map[string]fieldType{
+	//		"f_int64":  FieldTypeInt64,
+	//		"f_float":  FieldTypeFloat64,
+	//		"f_bool":   FieldTypeBool,
+	//		"f_string": FieldTypeString,
+	//	}).ShardKeys([]string{"tag1"}) is the best way to set up the
+	// builder, don't forget to set the database otherwise it will return an error
+	CreateMeasurement(builder CreateMeasurementBuilder) error
+	// ShowMeasurements use command `SHOW MEASUREMENT` to view the measurements created in the database, calling
+	// NewMeasurementBuilder.Database("db0").RetentionPolicy("rp0").Show() is the best way to set up
+	// the builder, don't forget to set the database otherwise it will return an error
+	ShowMeasurements(builder ShowMeasurementBuilder) ([]string, error)
+	// DropMeasurement use command `DROP MEASUREMENT` to delete measurement, deleting a measurement
+	// will delete all indexes, series and data. if retentionPolicy is empty, use default retention policy, don't
+	// forget to set the database and measurement otherwise it will return an error
 	DropMeasurement(database, retentionPolicy, measurement string) error
 
 	ShowTagKeys(database, command string) ([]ValuesResult, error)
