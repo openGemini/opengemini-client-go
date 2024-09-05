@@ -3,6 +3,7 @@ package opengemini
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -292,4 +293,279 @@ type CreateMeasurementBuilder interface {
 
 func NewMeasurementBuilder() MeasurementBuilder {
 	return &measurementBuilder{}
+}
+
+// ShowTagKeysBuilder view all TAG fields in the measurements
+type ShowTagKeysBuilder interface {
+	// Database specify measurement in database
+	Database(database string) ShowTagKeysBuilder
+	// Measurement specify measurement name
+	Measurement(measurement string) ShowTagKeysBuilder
+	// RetentionPolicy specify retention policy
+	RetentionPolicy(rp string) ShowTagKeysBuilder
+	// Limit specify limit
+	Limit(limit int) ShowTagKeysBuilder
+	// Offset specify offset
+	Offset(offset int) ShowTagKeysBuilder
+	build() (string, error)
+	getMeasurementBase() measurementBase
+}
+
+type showTagKeysBuilder struct {
+	// measurementBase is the base information of measurement
+	measurementBase
+	limit  int
+	offset int
+}
+
+func (s *showTagKeysBuilder) Database(database string) ShowTagKeysBuilder {
+	s.database = database
+	return s
+}
+
+func (s *showTagKeysBuilder) Measurement(measurement string) ShowTagKeysBuilder {
+	s.measurement = measurement
+	return s
+}
+
+func (s *showTagKeysBuilder) RetentionPolicy(rp string) ShowTagKeysBuilder {
+	s.retentionPolicy = rp
+	return s
+}
+
+func (s *showTagKeysBuilder) Limit(limit int) ShowTagKeysBuilder {
+	s.limit = limit
+	return s
+}
+
+func (s *showTagKeysBuilder) Offset(offset int) ShowTagKeysBuilder {
+	s.offset = offset
+	return s
+}
+
+func (s *showTagKeysBuilder) build() (string, error) {
+	var buf strings.Builder
+	if s.database == "" {
+		return "", ErrEmptyDatabaseName
+	}
+	buf.WriteString("SHOW TAG KEYS")
+
+	if s.measurement != "" {
+		buf.WriteString(fmt.Sprintf(" FROM %s", s.measurement))
+	}
+	if s.limit > 0 {
+		buf.WriteString(" LIMIT " + strconv.Itoa(s.limit))
+	}
+	if s.offset > 0 {
+		buf.WriteString(" OFFSET " + strconv.Itoa(s.offset))
+	}
+	return buf.String(), nil
+}
+
+func (s *showTagKeysBuilder) getMeasurementBase() measurementBase {
+	return s.measurementBase
+}
+
+func NewShowTagKeysBuilder() ShowTagKeysBuilder {
+	return &showTagKeysBuilder{}
+}
+
+type ShowTagValuesBuilder interface {
+	// Database specify measurement in database
+	Database(database string) ShowTagValuesBuilder
+	// Measurement specify measurement name
+	Measurement(measurement string) ShowTagValuesBuilder
+	// RetentionPolicy specify retention policy
+	RetentionPolicy(rp string) ShowTagValuesBuilder
+	// Limit specify limit
+	Limit(limit int) ShowTagValuesBuilder
+	// Offset specify offset
+	Offset(offset int) ShowTagValuesBuilder
+	// With supports specifying a tag key, a regular expression or multiple tag keys, if set multiple keys, it will
+	// return all tag field values, if set keys length is one and such as /regex/ it will match the regex, otherwise it
+	// show one tag field values.
+	With(keys ...string) ShowTagValuesBuilder
+	// Where filter other key condition
+	Where(key string, operator ComparisonOperator, value string) ShowTagValuesBuilder
+	build() (string, error)
+	getMeasurementBase() measurementBase
+}
+
+type showTagValuesBuilder struct {
+	// measurementBase is the base information of measurement
+	measurementBase
+	limit   int
+	offset  int
+	withKey []string
+	where   *ComparisonCondition
+}
+
+func NewShowTagValuesBuilder() ShowTagValuesBuilder {
+	return &showTagValuesBuilder{}
+}
+
+func (s *showTagValuesBuilder) Database(database string) ShowTagValuesBuilder {
+	s.database = database
+	return s
+}
+
+func (s *showTagValuesBuilder) Measurement(measurement string) ShowTagValuesBuilder {
+	s.measurement = measurement
+	return s
+}
+
+func (s *showTagValuesBuilder) RetentionPolicy(rp string) ShowTagValuesBuilder {
+	s.retentionPolicy = rp
+	return s
+}
+
+func (s *showTagValuesBuilder) Limit(limit int) ShowTagValuesBuilder {
+	s.limit = limit
+	return s
+}
+
+func (s *showTagValuesBuilder) Offset(offset int) ShowTagValuesBuilder {
+	s.offset = offset
+	return s
+}
+
+func (s *showTagValuesBuilder) With(keys ...string) ShowTagValuesBuilder {
+	s.withKey = keys
+	return s
+}
+
+func (s *showTagValuesBuilder) Where(key string, operator ComparisonOperator, value string) ShowTagValuesBuilder {
+	s.where = NewComparisonCondition(key, operator, value)
+	return s
+}
+
+func (s *showTagValuesBuilder) build() (string, error) {
+	if len(s.withKey) == 0 {
+		return "", ErrEmptyTagKey
+	}
+	var buff strings.Builder
+	buff.WriteString("SHOW TAG VALUES")
+	if s.measurement != "" {
+		buff.WriteString(" FROM " + s.measurement)
+	}
+	// must be set
+	if len(s.withKey) == 1 {
+		key := s.withKey[0]
+		if strings.HasPrefix(key, "/") && strings.HasSuffix(key, "/") {
+			buff.WriteString(" WITH KEY =~ " + key)
+		} else {
+			buff.WriteString(" WITH KEY = \"" + key + "\"")
+		}
+	}
+
+	if len(s.withKey) > 1 {
+		// append double quote, void keyword
+		for i := range s.withKey {
+			s.withKey[i] = "\"" + s.withKey[i] + "\""
+		}
+		buff.WriteString(" WITH KEY IN (" + strings.Join(s.withKey, ",") + ")")
+	}
+
+	if s.where != nil {
+		buff.WriteString(" WHERE " + s.where.build())
+	}
+
+	if s.limit > 0 {
+		buff.WriteString(" LIMIT " + strconv.Itoa(s.limit))
+	}
+
+	if s.offset > 0 {
+		buff.WriteString(" OFFSET " + strconv.Itoa(s.offset))
+	}
+
+	return buff.String(), nil
+}
+
+func (s *showTagValuesBuilder) getMeasurementBase() measurementBase {
+	return s.measurementBase
+}
+
+type ShowSeriesBuilder interface {
+	// Database specify measurement in database
+	Database(database string) ShowSeriesBuilder
+	// Measurement specify measurement name
+	Measurement(measurement string) ShowSeriesBuilder
+	// RetentionPolicy specify retention policy
+	RetentionPolicy(rp string) ShowSeriesBuilder
+	// Limit specify limit
+	Limit(limit int) ShowSeriesBuilder
+	// Offset specify offset
+	Offset(offset int) ShowSeriesBuilder
+	// Where filter other key condition, notice field comparisons are invalid
+	Where(key string, operator ComparisonOperator, value string) ShowSeriesBuilder
+	build() (string, error)
+	getMeasurementBase() measurementBase
+}
+
+type showSeriesBuilder struct {
+	// measurementBase is the base information of measurement
+	measurementBase
+	limit  int
+	offset int
+	where  *ComparisonCondition
+}
+
+func (s *showSeriesBuilder) Database(database string) ShowSeriesBuilder {
+	s.database = database
+	return s
+}
+
+func (s *showSeriesBuilder) Measurement(measurement string) ShowSeriesBuilder {
+	s.measurement = measurement
+	return s
+}
+
+func (s *showSeriesBuilder) RetentionPolicy(rp string) ShowSeriesBuilder {
+	s.retentionPolicy = rp
+	return s
+}
+
+func (s *showSeriesBuilder) Limit(limit int) ShowSeriesBuilder {
+	s.limit = limit
+	return s
+}
+
+func (s *showSeriesBuilder) Offset(offset int) ShowSeriesBuilder {
+	s.offset = offset
+	return s
+}
+
+func (s *showSeriesBuilder) Where(key string, operator ComparisonOperator, value string) ShowSeriesBuilder {
+	s.where = NewComparisonCondition(key, operator, value)
+	return s
+}
+
+func (s *showSeriesBuilder) build() (string, error) {
+	if s.database == "" {
+		return "", ErrEmptyDatabaseName
+	}
+	var buff strings.Builder
+	buff.WriteString("SHOW SERIES")
+	if s.measurement != "" {
+		buff.WriteString(" FROM " + s.measurement)
+	}
+	if s.where != nil {
+		buff.WriteString(" WHERE " + s.where.build())
+	}
+	if s.limit > 0 {
+		buff.WriteString(" LIMIT " + strconv.Itoa(s.limit))
+	}
+
+	if s.offset > 0 {
+		buff.WriteString(" OFFSET " + strconv.Itoa(s.offset))
+	}
+	return buff.String(), nil
+}
+
+func (s *showSeriesBuilder) getMeasurementBase() measurementBase {
+	return s.measurementBase
+}
+
+func NewShowSeriesBuilder() ShowSeriesBuilder {
+	return &showSeriesBuilder{}
 }

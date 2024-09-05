@@ -70,12 +70,24 @@ type Client interface {
 	// forget to set the database and measurement otherwise it will return an error
 	DropMeasurement(database, retentionPolicy, measurement string) error
 
-	ShowTagKeys(database, command string) ([]ValuesResult, error)
-	ShowTagValues(database, command string) ([]ValuesResult, error)
-	ShowFieldKeys(database, command string) ([]ValuesResult, error)
+	// ShowTagKeys view all TAG fields in the measurements, return {"measurement_name":["TAG1","TAG2"]}
+	// calling `NewShowTagKeysBuilder().Database("db0").Measurement("m0")...` to setup builder, don't forget to set the
+	// database otherwise it will return an error, if retention policy is empty, use default retention policy `autogen`,
+	// if measurement is empty, show all measurements
+	ShowTagKeys(builder ShowTagKeysBuilder) (map[string][]string, error)
+	// ShowTagValues returns the tag value of the specified tag key in the database, return ["TAG1","TAG2"]
+	// calling `NewShowTagValuesBuilder().Database("db0").Measurement("m0")...` to setup builder, don't forget to set the
+	// database otherwise it will return an error, if retention policy is empty, use default retention policy `autogen`,
+	// if tag key is empty it will return an error
+	ShowTagValues(builder ShowTagValuesBuilder) ([]string, error)
+	// ShowFieldKeys get measurement schema, return {"measurement_name": {"field_name":"field_type"}}
+	// if measurement not exist, return all measurements in database, otherwise return the first measurement field keys
+	ShowFieldKeys(database string, measurements ...string) (map[string]map[string]string, error)
 	// ShowSeries returns the series of specified databases
-	// return [measurement1,tag1=value1 measurement2,tag2=value2]
-	ShowSeries(database, command string) ([]string, error)
+	// return [h2o_pH,location=coyote_creek h2o_pH,location=santa_monica h2o_feet,location=coyote_creek...]
+	// calling `NewShowSeriesBuilder().Database("db0")...` to setup builder, don't forget to set the database otherwise
+	// it will return an error
+	ShowSeries(builder ShowSeriesBuilder) ([]string, error)
 
 	// Close shut down resources, such as health check tasks
 	Close() error
