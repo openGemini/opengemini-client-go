@@ -2,40 +2,55 @@ package opengemini
 
 import (
 	"bytes"
+	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 	"time"
 )
+
+func TestPointToString(t *testing.T) {
+	// line protocol without escaped chars
+	assert.Equal(t, "test,T0=0 a=1i", encodePoint(assemblePoint("test", "T0", "0", "a", 1)))
+
+	// line protocol measurement with escaped chars
+	assert.Equal(t, "test\\,,T0=0 a=1i", encodePoint(assemblePoint("test,", "T0", "0", "a", 1)))
+	assert.Equal(t, "test\\ ,T0=0 a=1i", encodePoint(assemblePoint("test ", "T0", "0", "a", 1)))
+
+	// line protocol tag key with escaped chars
+	assert.Equal(t, "test,T0\\,=0 a=1i", encodePoint(assemblePoint("test", "T0,", "0", "a", 1)))
+	assert.Equal(t, "test,T0\\==0 a=1i", encodePoint(assemblePoint("test", "T0=", "0", "a", 1)))
+	assert.Equal(t, "test,T0\\ =0 a=1i", encodePoint(assemblePoint("test", "T0 ", "0", "a", 1)))
+
+	// line protocol tag value with escaped chars
+	assert.Equal(t, "test,T0=0\\, a=1i", encodePoint(assemblePoint("test", "T0", "0,", "a", 1)))
+	assert.Equal(t, "test,T0=0\\= a=1i", encodePoint(assemblePoint("test", "T0", "0=", "a", 1)))
+	assert.Equal(t, "test,T0=0\\  a=1i", encodePoint(assemblePoint("test", "T0", "0 ", "a", 1)))
+
+	// line protocol field key with escaped chars
+	assert.Equal(t, "test,T0=0 a\\,=1i", encodePoint(assemblePoint("test", "T0", "0", "a,", 1)))
+	assert.Equal(t, "test,T0=0 a\\==1i", encodePoint(assemblePoint("test", "T0", "0", "a=", 1)))
+	assert.Equal(t, "test,T0=0 a\\ =1i", encodePoint(assemblePoint("test", "T0", "0", "a ", 1)))
+
+	// line protocol field value with escaped chars
+	assert.Equal(t, "test,T0=0 a=\"1\\\"\"", encodePoint(assemblePoint("test", "T0", "0", "a", "1\"")))
+	assert.Equal(t, "test,T0=0 a=\"1\\\\\"", encodePoint(assemblePoint("test", "T0", "0", "a", "1\\")))
+	assert.Equal(t, "test,T0=0 a=\"1\\\\\\\\\"", encodePoint(assemblePoint("test", "T0", "0", "a", "1\\\\")))
+	assert.Equal(t, "test,T0=0 a=\"1\\\\\\\\\\\\\"", encodePoint(assemblePoint("test", "T0", "0", "a", "1\\\\\\")))
+
+}
+
+func assemblePoint(measurement, tagKey, tagValue, fieldKey string, filedValue interface{}) *Point {
+	point := &Point{Measurement: measurement}
+	point.AddTag(tagKey, tagValue)
+	point.AddField(fieldKey, filedValue)
+	return point
+}
 
 func encodePoint(p *Point) string {
 	var buf bytes.Buffer
 	enc := NewLineProtocolEncoder(&buf)
 	_ = enc.Encode(p)
 	return buf.String()
-}
-
-func TestWriteString(t *testing.T) {
-	cases := []struct {
-		s, charsToEscape, result string
-	}{
-		{s: "foo", charsToEscape: "", result: "foo"},
-		{s: `f\\oo`, charsToEscape: "", result: `f\\\oo`},
-		{s: `\fo\o\`, charsToEscape: "", result: `\fo\o\`},
-		{s: `foo bar`, charsToEscape: " ", result: `foo\ bar`},
-		{s: `foo\ bar`, charsToEscape: " ", result: `foo\\\ bar`},
-		{s: `foo,\ bar`, charsToEscape: ", ", result: `foo\,\\\ bar`},
-		{s: `foo,\  bar`, charsToEscape: ", ", result: `foo\,\\\ \ bar`},
-		{s: `foo=,\  ba\r`, charsToEscape: ",= ", result: `foo\=\,\\\ \ ba\r`},
-	}
-
-	for _, c := range cases {
-		var buf bytes.Buffer
-		enc := NewLineProtocolEncoder(&buf)
-		_ = enc.writeString(c.s, c.charsToEscape)
-		if buf.String() != c.result {
-			t.Errorf("unexpected result: got %s, want %s", buf.String(), c.result)
-		}
-	}
 }
 
 func TestPointEncode(t *testing.T) {
