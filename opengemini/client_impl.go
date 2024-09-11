@@ -69,7 +69,10 @@ func newClient(c *Config) (Client, error) {
 		batchContextCancel: cancel,
 	}
 	dbClient.prevIdx.Store(-1)
-	go dbClient.endpointsCheck(ctx)
+	if len(c.Addresses) > 1 {
+		// if there are multiple addresses, start the health check
+		go dbClient.endpointsCheck(ctx)
+	}
 	return dbClient, nil
 }
 
