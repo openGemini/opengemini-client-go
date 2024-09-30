@@ -118,8 +118,6 @@ type Config struct {
 	MaxIdleConnsPerHost int
 	// GzipEnabled determines whether to use gzip for data transmission.
 	GzipEnabled bool
-	// TlsEnabled determines whether to use TLS for data transmission.
-	TlsEnabled bool
 	// TlsConfig configuration information for tls.
 	TlsConfig *tls.Config
 	// CustomMetricsLabels add custom labels to all the metrics reported by this client instance
