@@ -62,7 +62,7 @@ func newClient(c *Config) (Client, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	dbClient := &client{
 		config:             c,
-		endpoints:          buildEndpoints(c.Addresses, c.TlsEnabled),
+		endpoints:          buildEndpoints(c.Addresses, c.TlsConfig != nil),
 		cli:                newHttpClient(*c),
 		metrics:            newMetricsProvider(c.CustomMetricsLabels),
 		batchContext:       ctx,
