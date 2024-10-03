@@ -74,3 +74,19 @@ func TestClientShowRetentionPolicy(t *testing.T) {
 	err = c.DropDatabase(databaseName)
 	require.Nil(t, err)
 }
+
+func TestClientUpdateRetentionPolicy(t *testing.T) {
+	c := testDefaultClient(t)
+	databaseName := randomDatabaseName()
+	err := c.CreateDatabase(databaseName)
+	require.Nil(t, err)
+	err = c.UpdateRetentionPolicy(databaseName, RpConfig{Name: "autogen", Duration: "300d"}, true)
+	require.Nil(t, err)
+	rpResult, err := c.ShowRetentionPolicies(databaseName)
+	require.Nil(t, err)
+	require.Equal(t, len(rpResult), 1)
+	require.Equal(t, rpResult[0].Name, "autogen")
+	require.Equal(t, rpResult[0].Duration, "7200h0m0s")
+	err = c.DropDatabase(databaseName)
+	require.Nil(t, err)
+}

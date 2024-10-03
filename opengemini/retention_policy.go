@@ -137,6 +137,40 @@ func (c *client) CreateRetentionPolicy(database string, rpConfig RpConfig, isDef
 	return nil
 }
 
+func (c *client) UpdateRetentionPolicy(database string, rpConfig RpConfig, isDefault bool) error {
+	err := checkDatabaseAndPolicy(database, rpConfig.Name)
+	if err != nil {
+		return err
+	}
+
+	var buf strings.Builder
+	buf.WriteString(fmt.Sprintf("ALTER RETENTION POLICY %s ON \"%s\" ", rpConfig.Name, database))
+	if len(rpConfig.Duration) > 0 {
+		buf.WriteString(fmt.Sprintf(" DURATION %s", rpConfig.Duration))
+	}
+	if len(rpConfig.IndexDuration) > 0 {
+		buf.WriteString(fmt.Sprintf(" INDEX DURATION %s", rpConfig.IndexDuration))
+	}
+	if len(rpConfig.IndexDuration) > 0 {
+		buf.WriteString(fmt.Sprintf(" INDEX DURATION %s", rpConfig.IndexDuration))
+	}
+	if isDefault {
+		buf.WriteString(" DEFAULT")
+	}
+
+	queryResult, err := c.queryPost(Query{Command: buf.String()})
+	if err != nil {
+		return err
+	}
+
+	err = queryResult.hasError()
+	if err != nil {
+		return fmt.Errorf("update retention policy %w", err)
+	}
+
+	return nil
+}
+
 // ShowRetentionPolicies Show retention policy
 func (c *client) ShowRetentionPolicies(database string) ([]RetentionPolicy, error) {
 	err := checkDatabaseName(database)
