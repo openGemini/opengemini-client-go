@@ -43,6 +43,7 @@ type Client interface {
 	// rpConfig configuration information for retention policy
 	// isDefault can set the new retention policy as the default retention policy for the database
 	CreateRetentionPolicy(database string, rpConfig RpConfig, isDefault bool) error
+	UpdateRetentionPolicy(database string, rpConfig RpConfig, isDefault bool) error
 	ShowRetentionPolicies(database string) ([]RetentionPolicy, error)
 	DropRetentionPolicy(database, retentionPolicy string) error
 
