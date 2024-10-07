@@ -12,25 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: go mod check
-
+name: license lint
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
-
 jobs:
-  go_mod_check:
+  build:
+    name: license lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v4
+      - name: licenselint
+        uses: shoothzj/licenselint@main
         with:
-          go-version: '1.20'
-      - name: Run Go Mod Check Action
-        uses: Shoothzj/go-mod-check-action@main
-        with:
-          prohibitIndirectDepUpdate: 'true'
+          author: openGemini Authors
