@@ -15,8 +15,9 @@
 package opengemini
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestClientCreateRetentionPolicy(t *testing.T) {
@@ -94,6 +95,7 @@ func TestClientUpdateRetentionPolicy(t *testing.T) {
 	databaseName := randomDatabaseName()
 	err := c.CreateDatabase(databaseName)
 	require.Nil(t, err)
+
 	err = c.UpdateRetentionPolicy(databaseName, RpConfig{Name: "autogen", Duration: "300d"}, true)
 	require.Nil(t, err)
 	rpResult, err := c.ShowRetentionPolicies(databaseName)
@@ -101,6 +103,17 @@ func TestClientUpdateRetentionPolicy(t *testing.T) {
 	require.Equal(t, len(rpResult), 1)
 	require.Equal(t, rpResult[0].Name, "autogen")
 	require.Equal(t, rpResult[0].Duration, "7200h0m0s")
+
+	err = c.UpdateRetentionPolicy(databaseName, RpConfig{Name: "autogen", Duration: "300d", ShardGroupDuration: "2h", IndexDuration: "4h"}, true)
+	require.Nil(t, err)
+	rpResult, err = c.ShowRetentionPolicies(databaseName)
+	require.Nil(t, err)
+	require.Equal(t, len(rpResult), 1)
+	require.Equal(t, rpResult[0].Name, "autogen")
+	require.Equal(t, rpResult[0].Duration, "7200h0m0s")
+	require.Equal(t, rpResult[0].IndexDuration, "4h0m0s")
+	require.Equal(t, rpResult[0].ShardGroupDuration, "2h0m0s")
+
 	err = c.DropDatabase(databaseName)
 	require.Nil(t, err)
 }

@@ -165,8 +165,8 @@ func (c *client) UpdateRetentionPolicy(database string, rpConfig RpConfig, isDef
 	if len(rpConfig.IndexDuration) > 0 {
 		buf.WriteString(fmt.Sprintf(" INDEX DURATION %s", rpConfig.IndexDuration))
 	}
-	if len(rpConfig.IndexDuration) > 0 {
-		buf.WriteString(fmt.Sprintf(" INDEX DURATION %s", rpConfig.IndexDuration))
+	if len(rpConfig.ShardGroupDuration) > 0 {
+		buf.WriteString(fmt.Sprintf(" SHARD DURATION %s", rpConfig.ShardGroupDuration))
 	}
 	if isDefault {
 		buf.WriteString(" DEFAULT")
