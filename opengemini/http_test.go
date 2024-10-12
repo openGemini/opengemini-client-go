@@ -15,9 +15,10 @@
 package opengemini
 
 import (
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestSetAuthorization(t *testing.T) {

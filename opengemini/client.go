@@ -17,8 +17,9 @@ package opengemini
 import (
 	"context"
 	"crypto/tls"
-	"github.com/prometheus/client_golang/prometheus"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (

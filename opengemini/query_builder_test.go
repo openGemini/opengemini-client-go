@@ -15,9 +15,10 @@
 package opengemini
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestQueryBuilderSelectAllFromTable(t *testing.T) {
@@ -232,7 +233,7 @@ func TestQueryBuilderSelectWithAsExpression(t *testing.T) {
 	location, err := time.LoadLocation("America/Chicago")
 	require.NoError(t, err)
 
-        asWL := NewAsExpression("WL", waterLevelField)
+	asWL := NewAsExpression("WL", waterLevelField)
 
 	query := qb.Select(asWL).
 		From("h2o_feet").
@@ -260,7 +261,7 @@ func TestQueryBuilderSelectWithAggregate(t *testing.T) {
 	location, err := time.LoadLocation("America/Chicago")
 	require.NoError(t, err)
 
-        asWL := NewAsExpression("WL", countWaterLevelField)
+	asWL := NewAsExpression("WL", countWaterLevelField)
 
 	query := qb.Select(asWL).
 		From("h2o_feet").

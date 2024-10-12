@@ -16,10 +16,11 @@ package opengemini
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPointToString(t *testing.T) {

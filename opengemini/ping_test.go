@@ -15,8 +15,9 @@
 package opengemini
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestPingSuccess(t *testing.T) {
