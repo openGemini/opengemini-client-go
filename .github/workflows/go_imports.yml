@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: go mod check
-
+name: go imports
 on:
   push:
     branches:
@@ -21,16 +20,18 @@ on:
   pull_request:
     branches:
       - main
-
 jobs:
-  go_mod_check:
+  golangci:
+    name: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: "go.mod"
-      - name: Run Go Mod Check Action
-        uses: Shoothzj/go-mod-check-action@main
-        with:
-          prohibitIndirectDepUpdate: 'true'
+          go-version: 'stable'
+      - name: install goimports
+        run: go install golang.org/x/tools/cmd/goimports@latest
+      - name: run goimports
+        run: goimports -w .
+      - name: check for unformatted code
+        run: git diff --exit-code

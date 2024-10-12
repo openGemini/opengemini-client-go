@@ -21,9 +21,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/openGemini/opengemini-client-go/opengemini"
 	"math/rand"
 	"time"
+
+	"github.com/openGemini/opengemini-client-go/opengemini"
 )
 
 func main() {

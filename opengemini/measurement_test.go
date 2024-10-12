@@ -16,9 +16,10 @@ package opengemini
 
 import (
 	"context"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestClient_ShowMeasurements(t *testing.T) {
