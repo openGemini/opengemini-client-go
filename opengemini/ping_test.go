@@ -17,6 +17,8 @@ package opengemini
 import (
 	"testing"
 
+	"github.com/libgox/addr"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,7 +31,7 @@ func TestPingSuccess(t *testing.T) {
 
 func TestPingFailForInaccessibleAddress(t *testing.T) {
 	c := testNewClient(t, &Config{
-		Addresses: []*Address{{
+		Addresses: []addr.Address{{
 			Host: "localhost",
 			Port: 8086,
 		}, {

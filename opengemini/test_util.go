@@ -17,12 +17,14 @@ package opengemini
 import (
 	"testing"
 
+	"github.com/libgox/addr"
+
 	"github.com/stretchr/testify/require"
 )
 
 func testDefaultClient(t *testing.T) Client {
 	return testNewClient(t, &Config{
-		Addresses: []*Address{{
+		Addresses: []addr.Address{{
 			Host: "localhost",
 			Port: 8086,
 		}},
