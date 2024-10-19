@@ -23,6 +23,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/libgox/addr"
 )
 
 type endpoint struct {
@@ -103,7 +105,7 @@ func (c *client) Close() error {
 	return nil
 }
 
-func buildEndpoints(addresses []*Address, tlsEnabled bool) []endpoint {
+func buildEndpoints(addresses []addr.Address, tlsEnabled bool) []endpoint {
 	urls := make([]endpoint, len(addresses))
 	protocol := "http://"
 	if tlsEnabled {
