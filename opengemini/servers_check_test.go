@@ -26,6 +26,8 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/exp/slog"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -76,6 +78,7 @@ func TestServerCheck(t *testing.T) {
 			},
 		},
 		prevIdx: atomic.Int32{},
+		logger:  slog.Default(),
 	}
 	cli.prevIdx.Store(-1)
 	var ctx context.Context

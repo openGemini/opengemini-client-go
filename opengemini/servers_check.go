@@ -48,10 +48,16 @@ func (c *client) checkUpOrDown(ctx context.Context) {
 			defer func() {
 				wg.Done()
 				if err := recover(); err != nil {
+					c.logger.Error("panic recovered during endpoint check", "index", idx, "error", err)
 					return
 				}
 			}()
 			err := c.ping(ctx, idx)
+			if err != nil {
+				c.logger.Error("ping failed", "index", idx, "error", err)
+			} else {
+				c.logger.Info("ping succeeded", "index", idx)
+			}
 			c.endpoints[idx].isDown.Store(err != nil)
 		}(i)
 	}

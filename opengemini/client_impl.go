@@ -24,6 +24,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"golang.org/x/exp/slog"
+
 	"github.com/libgox/addr"
 )
 
@@ -42,6 +44,8 @@ type client struct {
 
 	batchContext       context.Context
 	batchContextCancel context.CancelFunc
+
+	logger *slog.Logger
 }
 
 func newClient(c *Config) (Client, error) {
@@ -88,6 +92,11 @@ func newClient(c *Config) (Client, error) {
 	if len(c.Addresses) > 1 {
 		// if there are multiple addresses, start the health check
 		go dbClient.endpointsCheck(ctx)
+	}
+	if c.Logger != nil {
+		dbClient.logger = c.Logger
+	} else {
+		dbClient.logger = slog.Default()
 	}
 	return dbClient, nil
 }
