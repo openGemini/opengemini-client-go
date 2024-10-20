@@ -19,6 +19,8 @@ import (
 	"crypto/tls"
 	"time"
 
+	"golang.org/x/exp/slog"
+
 	"github.com/libgox/addr"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -140,6 +142,8 @@ type Config struct {
 	TlsConfig *tls.Config
 	// CustomMetricsLabels add custom labels to all the metrics reported by this client instance
 	CustomMetricsLabels map[string]string
+	// Logger structured logger for logging operations
+	Logger *slog.Logger
 }
 
 // Address configuration for providing service.
