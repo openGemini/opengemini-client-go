@@ -88,15 +88,15 @@ func newClient(c *Config) (Client, error) {
 		batchContext:       ctx,
 		batchContextCancel: cancel,
 	}
-	dbClient.prevIdx.Store(-1)
-	if len(c.Addresses) > 1 {
-		// if there are multiple addresses, start the health check
-		go dbClient.endpointsCheck(ctx)
-	}
 	if c.Logger != nil {
 		dbClient.logger = c.Logger
 	} else {
 		dbClient.logger = slog.Default()
+	}
+	dbClient.prevIdx.Store(-1)
+	if len(c.Addresses) > 1 {
+		// if there are multiple addresses, start the health check
+		go dbClient.endpointsCheck(ctx)
 	}
 	return dbClient, nil
 }
