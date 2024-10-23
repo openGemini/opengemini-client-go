@@ -17,12 +17,13 @@ package opengemini
 import "errors"
 
 var (
+	ErrAllServersDown    = errors.New("all servers down")
 	ErrEmptyDatabaseName = errors.New("empty database name")
-	ErrRetentionPolicy   = errors.New("empty retention policy")
 	ErrEmptyMeasurement  = errors.New("empty measurement")
 	ErrEmptyCommand      = errors.New("empty command")
 	ErrEmptyTagOrField   = errors.New("empty tag or field")
 	ErrEmptyTagKey       = errors.New("empty tag key")
+	ErrRetentionPolicy   = errors.New("empty retention policy")
 )
 
 // checkDatabaseName checks if the database name is empty and returns an error if it is.

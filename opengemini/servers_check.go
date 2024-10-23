@@ -16,12 +16,9 @@ package opengemini
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"time"
 )
-
-var ErrAllServersDown = errors.New("all servers down")
 
 const (
 	healthCheckPeriod = time.Second * 10
