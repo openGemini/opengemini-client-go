@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/libgox/addr v0.2.0
+	github.com/libgox/gocollections v0.0.0-20241024144716-59fe0afe6953
 	github.com/prometheus/client_golang v1.20.5
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948

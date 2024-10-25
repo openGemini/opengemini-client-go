@@ -20,13 +20,13 @@ import (
 	"net"
 	"net/http"
 	"strconv"
-	"sync"
 	"sync/atomic"
 	"time"
 
-	"golang.org/x/exp/slog"
-
 	"github.com/libgox/addr"
+	"github.com/libgox/gocollections/syncx"
+
+	"golang.org/x/exp/slog"
 )
 
 type endpoint struct {
@@ -39,7 +39,7 @@ type client struct {
 	endpoints   []endpoint
 	cli         *http.Client
 	prevIdx     atomic.Int32
-	dataChanMap sync.Map
+	dataChanMap syncx.Map[dbRp, chan *sendBatchWithCB]
 	metrics     *metrics
 
 	batchContext       context.Context
@@ -103,11 +103,8 @@ func newClient(c *Config) (Client, error) {
 
 func (c *client) Close() error {
 	c.batchContextCancel()
-	c.dataChanMap.Range(func(key, value interface{}) bool {
-		cb, ok := value.(chan *sendBatchWithCB)
-		if ok {
-			close(cb)
-		}
+	c.dataChanMap.Range(func(key dbRp, cb chan *sendBatchWithCB) bool {
+		close(cb)
 		c.dataChanMap.Delete(key)
 		return true
 	})

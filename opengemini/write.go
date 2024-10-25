@@ -59,19 +59,19 @@ func (c *client) WritePointWithRp(database string, rp string, point *Point, call
 		case <-c.batchContext.Done():
 			return c.batchContext.Err()
 		default:
-			value, ok := c.dataChanMap.Load(dbRp{db: database, rp: rp})
+			key := dbRp{db: database, rp: rp}
+			value, ok := c.dataChanMap.Load(key)
 			if !ok {
 				newCollection := make(chan *sendBatchWithCB, c.config.BatchConfig.BatchSize*2)
-				actual, loaded := c.dataChanMap.LoadOrStore(database, newCollection)
+				actual, loaded := c.dataChanMap.LoadOrStore(key, newCollection)
 				if loaded {
 					close(newCollection)
 				} else {
-					go c.internalBatchSend(c.batchContext, database, rp, actual.(chan *sendBatchWithCB))
+					go c.internalBatchSend(c.batchContext, database, rp, actual)
 				}
 				value = actual
 			}
-			collection := value.(chan *sendBatchWithCB)
-			collection <- &sendBatchWithCB{
+			value <- &sendBatchWithCB{
 				point:    point,
 				callback: callback,
 			}
