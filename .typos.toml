@@ -13,3 +13,9 @@
 # limitations under the License.
 
 [default.extend-words]
+
+[files]
+extend-exclude = [
+    "go.mod",
+    "go.sum",
+]
