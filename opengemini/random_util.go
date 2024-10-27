@@ -17,9 +17,9 @@ package opengemini
 import (
 	"crypto/rand"
 	"math/big"
-)
 
-const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	"github.com/libgox/unicodex/letter"
+)
 
 func RandBytes(n int64) []byte {
 	if n <= 0 {
@@ -27,11 +27,11 @@ func RandBytes(n int64) []byte {
 	}
 	b := make([]byte, n)
 	for i := range b {
-		index, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
+		index, err := rand.Int(rand.Reader, big.NewInt(int64(letter.EnglishCount)))
 		if err != nil {
 			panic(err)
 		}
-		b[i] = letters[index.Int64()]
+		b[i] = letter.EnglishLetters[index.Int64()]
 	}
 	return b
 }
