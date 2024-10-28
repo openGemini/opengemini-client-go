@@ -53,14 +53,14 @@ func newClient(c *Config) (Client, error) {
 	}
 	if c.AuthConfig != nil {
 		if c.AuthConfig.AuthType == AuthTypeToken && len(c.AuthConfig.Token) == 0 {
-			return nil, errors.New("invalid auth config due to empty token")
+			return nil, ErrEmptyAuthToken
 		}
 		if c.AuthConfig.AuthType == AuthTypePassword {
 			if len(c.AuthConfig.Username) == 0 {
-				return nil, errors.New("invalid auth config due to empty username")
+				return nil, ErrEmptyAuthUsername
 			}
 			if len(c.AuthConfig.Password) == 0 {
-				return nil, errors.New("invalid auth config due to empty password")
+				return nil, ErrEmptyAuthPassword
 			}
 		}
 	}
