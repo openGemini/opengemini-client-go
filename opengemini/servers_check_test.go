@@ -26,9 +26,8 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/exp/slog"
-
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/exp/slog"
 )
 
 func setHandleFunc() {
