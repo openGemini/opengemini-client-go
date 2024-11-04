@@ -120,7 +120,17 @@ func TestQueryWithMsgPack(t *testing.T) {
 		}
 		result, err := c.Query(q)
 		assert.Nil(t, err)
-		v := int64(result.Results[0].Series[0].Values[0][0].(float64))
+		var v int64
+		switch val := result.Results[0].Series[0].Values[0][0].(type) {
+		case float64:
+			v = int64(val)
+		case int64:
+			v = val
+		case int32:
+			v = int64(val)
+		default:
+			t.Fatalf("unexpected type %T", val)
+		}
 		assert.Equal(t, length, getTimestampLength(v))
 	}
 }
