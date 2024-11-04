@@ -15,6 +15,7 @@
 package opengemini
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -66,7 +67,10 @@ func TestQueryWithEpoch(t *testing.T) {
 		}
 		result, err := c.Query(q)
 		assert.Nil(t, err)
-		v := int64(result.Results[0].Series[0].Values[0][0].(float64))
+		v, err := convertToInt64(result.Results[0].Series[0].Values[0][0])
+		if err != nil {
+			t.Fatalf("conversion error: %v", err)
+		}
 		assert.Equal(t, length, getTimestampLength(v))
 	}
 }
@@ -76,7 +80,7 @@ func TestQueryWithMsgPack(t *testing.T) {
 			Host: "localhost",
 			Port: 8086,
 		}},
-		Encoding: MSGPACK,
+		Codec: MSGPACK,
 	})
 
 	// create a test database with rand suffix
@@ -120,16 +124,9 @@ func TestQueryWithMsgPack(t *testing.T) {
 		}
 		result, err := c.Query(q)
 		assert.Nil(t, err)
-		var v int64
-		switch val := result.Results[0].Series[0].Values[0][0].(type) {
-		case float64:
-			v = int64(val)
-		case int64:
-			v = val
-		case int32:
-			v = int64(val)
-		default:
-			t.Fatalf("unexpected type %T", val)
+		v, err := convertToInt64(result.Results[0].Series[0].Values[0][0])
+		if err != nil {
+			t.Fatalf("conversion error: %v", err)
 		}
 		assert.Equal(t, length, getTimestampLength(v))
 	}
@@ -141,4 +138,17 @@ func getTimestampLength(timestamp int64) int64 {
 		timestamp /= 10
 	}
 	return length
+}
+
+func convertToInt64(value interface{}) (int64, error) {
+	switch val := value.(type) {
+	case float64:
+		return int64(val), nil
+	case int64:
+		return val, nil
+	case int32:
+		return int64(val), nil
+	default:
+		return 0, fmt.Errorf("unsupported type: %T", value)
+	}
 }

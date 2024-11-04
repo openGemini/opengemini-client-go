@@ -41,12 +41,8 @@ func (c *client) Query(q Query) (*QueryResult, error) {
 	req.queryValues.Add("rp", q.RetentionPolicy)
 	req.queryValues.Add("epoch", q.Precision.Epoch())
 
-	//Encoding
-	if c.config.Encoding == MSGPACK {
-		if req.header == nil {
-			req.header = make(http.Header)
-		}
-		req.header.Set("Accept", "application/x-msgpack")
+	if c.config.Codec == MSGPACK {
+		setRequestHeaders(&req, c.config.Codec)
 	}
 
 	// metric
@@ -78,11 +74,8 @@ func (c *client) queryPost(q Query) (*QueryResult, error) {
 	req.queryValues.Add("db", q.Database)
 	req.queryValues.Add("q", q.Command)
 
-	if c.config.Encoding == MSGPACK {
-		if req.header == nil {
-			req.header = make(http.Header)
-		}
-		req.header.Set("Accept", "application/x-msgpack")
+	if c.config.Codec == MSGPACK {
+		setRequestHeaders(&req, c.config.Codec)
 	}
 
 	resp, err := c.executeHttpPost(UrlQuery, req)
@@ -94,6 +87,16 @@ func (c *client) queryPost(q Query) (*QueryResult, error) {
 		return nil, err
 	}
 	return qr, nil
+}
+
+// setRequestHeaders sets the appropriate headers based on the codec.
+func setRequestHeaders(req *requestDetails, codec Codec) {
+	if codec == MSGPACK {
+		if req.header == nil {
+			req.header = make(http.Header)
+		}
+		req.header.Set("Accept", "application/x-msgpack")
+	}
 }
 
 // retrieve query result from the response
