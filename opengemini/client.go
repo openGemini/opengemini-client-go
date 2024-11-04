@@ -31,6 +31,18 @@ const (
 	AuthTypeToken
 )
 
+type Encoding int
+
+// Define constants for different encoding mode
+const (
+	MSGPACK Encoding = iota
+	UTF8
+)
+
+func (e Encoding) String() string {
+	return [...]string{"x-msgpack", "utf-8"}[e]
+}
+
 // Client represents a openGemini client.
 type Client interface {
 	// Ping check that status of cluster.
@@ -136,6 +148,8 @@ type Config struct {
 	MaxIdleConnsPerHost int
 	// GzipEnabled determines whether to use gzip for data transmission.
 	GzipEnabled bool
+	//Encoding determines the Encoding mode used for data transmission.
+	Encoding Encoding
 	// TlsConfig configuration information for tls.
 	TlsConfig *tls.Config
 	// CustomMetricsLabels add custom labels to all the metrics reported by this client instance

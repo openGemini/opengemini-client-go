@@ -20,6 +20,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 type Query struct {
@@ -39,6 +41,14 @@ func (c *client) Query(q Query) (*QueryResult, error) {
 	req.queryValues.Add("rp", q.RetentionPolicy)
 	req.queryValues.Add("epoch", q.Precision.Epoch())
 
+	//Encoding
+	if c.config.Encoding == MSGPACK {
+		if req.header == nil {
+			req.header = make(http.Header)
+		}
+		req.header.Set("Accept", "application/x-msgpack")
+	}
+
 	// metric
 	c.metrics.queryCounter.Add(1)
 	c.metrics.queryDatabaseCounter.WithLabelValues(q.Database).Add(1)
@@ -53,18 +63,9 @@ func (c *client) Query(q Query) (*QueryResult, error) {
 	if err != nil {
 		return nil, errors.New("query request failed, error: " + err.Error())
 	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
+	qr, err := retrieveQueryResFromResp(resp)
 	if err != nil {
-		return nil, errors.New("query resp read failed, error: " + err.Error())
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("query error resp, code: " + resp.Status + "body: " + string(body))
-	}
-	var qr = new(QueryResult)
-	err = json.Unmarshal(body, qr)
-	if err != nil {
-		return nil, errors.New("query unmarshal resp body failed, error: " + err.Error())
+		return nil, err
 	}
 	return qr, nil
 }
@@ -76,11 +77,27 @@ func (c *client) queryPost(q Query) (*QueryResult, error) {
 
 	req.queryValues.Add("db", q.Database)
 	req.queryValues.Add("q", q.Command)
+
+	if c.config.Encoding == MSGPACK {
+		if req.header == nil {
+			req.header = make(http.Header)
+		}
+		req.header.Set("Accept", "application/x-msgpack")
+	}
+
 	resp, err := c.executeHttpPost(UrlQuery, req)
 	if err != nil {
 		return nil, errors.New("request failed, error: " + err.Error())
 	}
+	qr, err := retrieveQueryResFromResp(resp)
+	if err != nil {
+		return nil, err
+	}
+	return qr, nil
+}
 
+// retrieve query result from the response
+func retrieveQueryResFromResp(resp *http.Response) (*QueryResult, error) {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -89,10 +106,18 @@ func (c *client) queryPost(q Query) (*QueryResult, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.New("error resp, code: " + resp.Status + "body: " + string(body))
 	}
+	contentType := resp.Header.Get("Content-Type")
 	var qr = new(QueryResult)
-	err = json.Unmarshal(body, qr)
-	if err != nil {
-		return nil, errors.New("unmarshal resp body failed, error: " + err.Error())
+	if contentType == "application/x-msgpack" {
+		err = msgpack.Unmarshal(body, qr)
+		if err != nil {
+			return nil, errors.New("unmarshal msgpack body failed, error: " + err.Error())
+		}
+	} else {
+		err = json.Unmarshal(body, qr)
+		if err != nil {
+			return nil, errors.New("unmarshal json body failed, error: " + err.Error())
+		}
 	}
 	return qr, nil
 }
