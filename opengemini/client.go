@@ -22,6 +22,7 @@ import (
 
 	"github.com/libgox/addr"
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/exp/slog"
 )
 
 const (
