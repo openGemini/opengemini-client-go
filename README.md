@@ -2,7 +2,11 @@
 
 English | [简体中文](README_CN.md)
 
-![License](https://img.shields.io/badge/license-Apache2.0-green) ![Language](https://img.shields.io/badge/Language-Go-blue.svg) [![version](https://img.shields.io/github/v/tag/opengemini/opengemini-client-go?label=release&color=blue)](https://github.com/opengemini/opengemini-client-go/releases) [![Godoc](http://img.shields.io/badge/docs-go.dev-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/openGemini/opengemini-client-go)
+![License](https://img.shields.io/badge/license-Apache2.0-green)
+![Language](https://img.shields.io/badge/Language-Go-blue.svg)
+[![version](https://img.shields.io/github/v/tag/opengemini/opengemini-client-go?label=release&color=blue)](https://github.com/opengemini/opengemini-client-go/releases)
+[![Go report](https://goreportcard.com/badge/github.com/opengemini/opengemini-client-go)](https://goreportcard.com/report/github.com/opengemini/opengemini-client-go)
+[![Godoc](http://img.shields.io/badge/docs-go.dev-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/openGemini/opengemini-client-go)
 
 `opengemini-client-go` is a Golang client for OpenGemini
 
