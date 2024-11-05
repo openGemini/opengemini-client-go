@@ -32,16 +32,12 @@ const (
 	AuthTypeToken
 )
 
-type Codec int
+type Codec string
 
 // Define constants for different encoding mode
 const (
-	MSGPACK Codec = iota
+	MSGPACK Codec = "MSGPACK"
 )
-
-func (e Codec) String() string {
-	return [...]string{"x-msgpack"}[e]
-}
 
 // Client represents a openGemini client.
 type Client interface {

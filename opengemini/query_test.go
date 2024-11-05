@@ -67,10 +67,7 @@ func TestQueryWithEpoch(t *testing.T) {
 		}
 		result, err := c.Query(q)
 		assert.Nil(t, err)
-		v, err := convertToInt64(result.Results[0].Series[0].Values[0][0])
-		if err != nil {
-			t.Fatalf("conversion error: %v", err)
-		}
+		v := int64(result.Results[0].Series[0].Values[0][0].(float64))
 		assert.Equal(t, length, getTimestampLength(v))
 	}
 }

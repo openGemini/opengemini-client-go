@@ -33,17 +33,12 @@ type Query struct {
 
 // Query sends a command to the server
 func (c *client) Query(q Query) (*QueryResult, error) {
-	req := requestDetails{
-		queryValues: make(map[string][]string),
-	}
-	req.queryValues.Add("db", q.Database)
-	req.queryValues.Add("q", q.Command)
-	req.queryValues.Add("rp", q.RetentionPolicy)
-	req.queryValues.Add("epoch", q.Precision.Epoch())
-
-	if c.config.Codec == MSGPACK {
-		setRequestHeaders(&req, c.config.Codec)
-	}
+	req := buildRequestDetails(c.config, func(req *requestDetails) {
+		req.queryValues.Add("db", q.Database)
+		req.queryValues.Add("q", q.Command)
+		req.queryValues.Add("rp", q.RetentionPolicy)
+		req.queryValues.Add("epoch", q.Precision.Epoch())
+	})
 
 	// metric
 	c.metrics.queryCounter.Add(1)
@@ -67,16 +62,10 @@ func (c *client) Query(q Query) (*QueryResult, error) {
 }
 
 func (c *client) queryPost(q Query) (*QueryResult, error) {
-	req := requestDetails{
-		queryValues: make(map[string][]string),
-	}
-
-	req.queryValues.Add("db", q.Database)
-	req.queryValues.Add("q", q.Command)
-
-	if c.config.Codec == MSGPACK {
-		setRequestHeaders(&req, c.config.Codec)
-	}
+	req := buildRequestDetails(c.config, func(req *requestDetails) {
+		req.queryValues.Add("db", q.Database)
+		req.queryValues.Add("q", q.Command)
+	})
 
 	resp, err := c.executeHttpPost(UrlQuery, req)
 	if err != nil {
@@ -89,9 +78,22 @@ func (c *client) queryPost(q Query) (*QueryResult, error) {
 	return qr, nil
 }
 
-// setRequestHeaders sets the appropriate headers based on the codec.
-func setRequestHeaders(req *requestDetails, codec Codec) {
-	if codec == MSGPACK {
+func buildRequestDetails(c *Config, requestModifier func(*requestDetails)) requestDetails {
+	req := requestDetails{
+		queryValues: make(map[string][]string),
+	}
+
+	applyCodec(&req, c)
+
+	if requestModifier != nil {
+		requestModifier(&req)
+	}
+
+	return req
+}
+
+func applyCodec(req *requestDetails, config *Config) {
+	if config.Codec == MSGPACK {
 		if req.header == nil {
 			req.header = make(http.Header)
 		}
