@@ -22,7 +22,6 @@ import (
 
 	"github.com/libgox/addr"
 	"github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/exp/slog"
 )
 
 const (
@@ -34,7 +33,7 @@ const (
 
 type Codec string
 
-// Define constants for different codecs
+// Define constants for different encoding mode
 const (
 	MSGPACK Codec = "MSGPACK"
 )
@@ -144,7 +143,7 @@ type Config struct {
 	MaxIdleConnsPerHost int
 	// GzipEnabled determines whether to use gzip for data transmission.
 	GzipEnabled bool
-	//Codec determines the Codec mode used for data transmission.
+	// Codec determines the Codec mode used for data transmission.
 	Codec Codec
 	// TlsConfig configuration information for tls.
 	TlsConfig *tls.Config

@@ -25,10 +25,6 @@ import (
 
 	"github.com/libgox/addr"
 	"github.com/libgox/gocollections/syncx"
-<<<<<<< HEAD
-=======
-	"golang.org/x/exp/slog"
->>>>>>> feat: enable config 'x-msgpack' for large content cases
 )
 
 type endpoint struct {
