@@ -17,11 +17,11 @@ package opengemini
 import (
 	"context"
 	"crypto/tls"
+	"log/slog"
 	"time"
 
 	"github.com/libgox/addr"
 	"github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/exp/slog"
 )
 
 const (
