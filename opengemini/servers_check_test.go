@@ -28,7 +28,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/exp/slog"
 )
 
 func setHandleFunc() {
