@@ -36,6 +36,7 @@ func main() {
 			Host: "127.0.0.1",
 			Port: 8086,
 		}},
+		Codec: opengemini.MSGPACK,
 	}
 	client, err := opengemini.NewClient(config)
 	if err != nil {
