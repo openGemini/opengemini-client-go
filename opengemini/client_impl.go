@@ -17,6 +17,7 @@ package opengemini
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net"
 	"net/http"
 	"sync/atomic"
@@ -24,7 +25,6 @@ import (
 
 	"github.com/libgox/addr"
 	"github.com/libgox/gocollections/syncx"
-	"golang.org/x/exp/slog"
 )
 
 type endpoint struct {
