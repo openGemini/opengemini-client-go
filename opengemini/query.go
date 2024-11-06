@@ -93,7 +93,7 @@ func buildRequestDetails(c *Config, requestModifier func(*requestDetails)) reque
 }
 
 func applyCodec(req *requestDetails, config *Config) {
-	if config.Codec == MSGPACK {
+	if config.Codec == CodecMsgPack {
 		if req.header == nil {
 			req.header = make(http.Header)
 		}

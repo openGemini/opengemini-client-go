@@ -77,7 +77,7 @@ func TestQueryWithMsgPack(t *testing.T) {
 			Host: "localhost",
 			Port: 8086,
 		}},
-		Codec: MSGPACK,
+		Codec: CodecMsgPack,
 	})
 
 	// create a test database with rand suffix

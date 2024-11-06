@@ -33,9 +33,10 @@ const (
 
 type Codec string
 
-// Define constants for different encoding mode
+// Define constants for different encode/decode config
+
 const (
-	MSGPACK Codec = "MSGPACK"
+	CodecMsgPack Codec = "MsgPack"
 )
 
 // Client represents a openGemini client.
