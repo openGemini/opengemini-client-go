@@ -34,7 +34,7 @@ const (
 
 type Codec string
 
-// Define constants for different encoding mode
+// Define constants for different codecs
 const (
 	MSGPACK Codec = "MSGPACK"
 )
