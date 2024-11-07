@@ -17,10 +17,10 @@ github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/libgox/addr v0.2.0 h1:he4Vv7lzcGy/1qNpjJufEWRql0S23Ki/j0XpTDMDu3s=
 github.com/libgox/addr v0.2.0/go.mod h1:j0hEfpRqTZy4BsstS9Egsn1U0JmNdj/VkbF2VBmJlFw=
-github.com/libgox/gocollections v0.0.0-20241024144716-59fe0afe6953 h1:qnlK5i5xCbMjQLqFa6JfNn3r7mtRMwMtuqJjyhgAYK8=
-github.com/libgox/gocollections v0.0.0-20241024144716-59fe0afe6953/go.mod h1:Y4udpR8lStv1f67hVWbMCrcTyTvf98bFFsu/ZXvAvZ0=
-github.com/libgox/unicodex v0.0.1 h1:yUuZWMVXC5N9dcYgIc3aO7+2M5jN+XVatrU08Y5fC4k=
-github.com/libgox/unicodex v0.0.1/go.mod h1:RaB9wNp/oOS0Ew5+Wml7WePjztZ3njXiNid08KOmgjs=
+github.com/libgox/gocollections v0.1.1 h1:u102d/xMBF+8Cf/5UuFpcM/iP0NgvWlOR9tVo14Fs6s=
+github.com/libgox/gocollections v0.1.1/go.mod h1:Y4udpR8lStv1f67hVWbMCrcTyTvf98bFFsu/ZXvAvZ0=
+github.com/libgox/unicodex v0.1.0 h1:l7kBlt5yO/PLX4QmaOV6GLO7W2jFUECQsyxGWQPhwq8=
+github.com/libgox/unicodex v0.1.0/go.mod h1:RaB9wNp/oOS0Ew5+Wml7WePjztZ3njXiNid08KOmgjs=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
