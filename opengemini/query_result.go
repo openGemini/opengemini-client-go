@@ -20,14 +20,14 @@ const RpColumnLen = 8
 
 // SeriesResult contains the results of a series query
 type SeriesResult struct {
-	Series []*Series `json:"series,omitempty"`
-	Error  string    `json:"error,omitempty"`
+	Series []*Series `json:"series,omitempty" msgpack:"series,omitempty"`
+	Error  string    `json:"error,omitempty" msgpack:"error,omitempty"`
 }
 
 // QueryResult is the top-level struct
 type QueryResult struct {
-	Results []*SeriesResult `json:"results,omitempty"`
-	Error   string          `json:"error,omitempty"`
+	Results []*SeriesResult `json:"results,omitempty" msgpack:"results,omitempty"`
+	Error   string          `json:"error,omitempty" msgpack:"error,omitempty"`
 }
 
 func (result *QueryResult) hasError() error {

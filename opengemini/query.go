@@ -20,6 +20,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 type Query struct {
@@ -31,13 +33,12 @@ type Query struct {
 
 // Query sends a command to the server
 func (c *client) Query(q Query) (*QueryResult, error) {
-	req := requestDetails{
-		queryValues: make(map[string][]string),
-	}
-	req.queryValues.Add("db", q.Database)
-	req.queryValues.Add("q", q.Command)
-	req.queryValues.Add("rp", q.RetentionPolicy)
-	req.queryValues.Add("epoch", q.Precision.Epoch())
+	req := buildRequestDetails(c.config, func(req *requestDetails) {
+		req.queryValues.Add("db", q.Database)
+		req.queryValues.Add("q", q.Command)
+		req.queryValues.Add("rp", q.RetentionPolicy)
+		req.queryValues.Add("epoch", q.Precision.Epoch())
+	})
 
 	// metric
 	c.metrics.queryCounter.Add(1)
@@ -53,34 +54,55 @@ func (c *client) Query(q Query) (*QueryResult, error) {
 	if err != nil {
 		return nil, errors.New("query request failed, error: " + err.Error())
 	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
+	qr, err := retrieveQueryResFromResp(resp)
 	if err != nil {
-		return nil, errors.New("query resp read failed, error: " + err.Error())
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("query error resp, code: " + resp.Status + "body: " + string(body))
-	}
-	var qr = new(QueryResult)
-	err = json.Unmarshal(body, qr)
-	if err != nil {
-		return nil, errors.New("query unmarshal resp body failed, error: " + err.Error())
+		return nil, err
 	}
 	return qr, nil
 }
 
 func (c *client) queryPost(q Query) (*QueryResult, error) {
-	req := requestDetails{
-		queryValues: make(map[string][]string),
-	}
+	req := buildRequestDetails(c.config, func(req *requestDetails) {
+		req.queryValues.Add("db", q.Database)
+		req.queryValues.Add("q", q.Command)
+	})
 
-	req.queryValues.Add("db", q.Database)
-	req.queryValues.Add("q", q.Command)
 	resp, err := c.executeHttpPost(UrlQuery, req)
 	if err != nil {
 		return nil, errors.New("request failed, error: " + err.Error())
 	}
+	qr, err := retrieveQueryResFromResp(resp)
+	if err != nil {
+		return nil, err
+	}
+	return qr, nil
+}
 
+func buildRequestDetails(c *Config, requestModifier func(*requestDetails)) requestDetails {
+	req := requestDetails{
+		queryValues: make(map[string][]string),
+	}
+
+	applyCodec(&req, c)
+
+	if requestModifier != nil {
+		requestModifier(&req)
+	}
+
+	return req
+}
+
+func applyCodec(req *requestDetails, config *Config) {
+	if config.Codec == CodecMsgPack {
+		if req.header == nil {
+			req.header = make(http.Header)
+		}
+		req.header.Set("Accept", "application/x-msgpack")
+	}
+}
+
+// retrieve query result from the response
+func retrieveQueryResFromResp(resp *http.Response) (*QueryResult, error) {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -89,10 +111,18 @@ func (c *client) queryPost(q Query) (*QueryResult, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.New("error resp, code: " + resp.Status + "body: " + string(body))
 	}
+	contentType := resp.Header.Get("Content-Type")
 	var qr = new(QueryResult)
-	err = json.Unmarshal(body, qr)
-	if err != nil {
-		return nil, errors.New("unmarshal resp body failed, error: " + err.Error())
+	if contentType == "application/x-msgpack" {
+		err = msgpack.Unmarshal(body, qr)
+		if err != nil {
+			return nil, errors.New("unmarshal msgpack body failed, error: " + err.Error())
+		}
+	} else {
+		err = json.Unmarshal(body, qr)
+		if err != nil {
+			return nil, errors.New("unmarshal json body failed, error: " + err.Error())
+		}
 	}
 	return qr, nil
 }

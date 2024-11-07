@@ -31,6 +31,14 @@ const (
 	AuthTypeToken
 )
 
+type Codec string
+
+// Define constants for different encode/decode config
+
+const (
+	CodecMsgPack Codec = "MsgPack"
+)
+
 // Client represents a openGemini client.
 type Client interface {
 	// Ping check that status of cluster.
@@ -136,6 +144,8 @@ type Config struct {
 	MaxIdleConnsPerHost int
 	// GzipEnabled determines whether to use gzip for data transmission.
 	GzipEnabled bool
+	// Codec determines the Codec mode used for data transmission.
+	Codec Codec
 	// TlsConfig configuration information for tls.
 	TlsConfig *tls.Config
 	// CustomMetricsLabels add custom labels to all the metrics reported by this client instance
