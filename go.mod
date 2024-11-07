@@ -4,8 +4,8 @@ go 1.21
 
 require (
 	github.com/libgox/addr v0.2.0
-	github.com/libgox/gocollections v0.0.0-20241024144716-59fe0afe6953
-	github.com/libgox/unicodex v0.0.1
+	github.com/libgox/gocollections v0.1.1
+	github.com/libgox/unicodex v0.1.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/stretchr/testify v1.9.0
 )

@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/libgox/addr"
-
+	"github.com/libgox/unicodex/letter"
 	"github.com/stretchr/testify/require"
 )
 
@@ -39,13 +39,13 @@ func testNewClient(t *testing.T, config *Config) Client {
 }
 
 func randomDatabaseName() string {
-	return RandStr(8)
+	return letter.RandEnglish(8)
 }
 
 func randomRetentionPolicy() string {
-	return RandStr(8)
+	return letter.RandEnglish(8)
 }
 
 func randomMeasurement() string {
-	return RandStr(8)
+	return letter.RandEnglish(8)
 }
