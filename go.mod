@@ -3,11 +3,10 @@ module github.com/openGemini/opengemini-client-go
 go 1.21
 
 require (
-	github.com/libgox/addr v0.2.0
 	github.com/libgox/gocollections v0.1.1
 	github.com/libgox/unicodex v0.1.0
 	github.com/prometheus/client_golang v1.20.5
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 )
 

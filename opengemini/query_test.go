@@ -19,7 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/libgox/addr"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -73,7 +72,7 @@ func TestQueryWithEpoch(t *testing.T) {
 }
 func TestQueryWithMsgPack(t *testing.T) {
 	c := testNewClient(t, &Config{
-		Addresses: []addr.Address{{
+		Addresses: []Address{{
 			Host: "localhost",
 			Port: 8086,
 		}},

@@ -20,7 +20,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/libgox/addr"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -126,7 +125,7 @@ type Client interface {
 type Config struct {
 	// Addresses Configure the service URL for the openGemini service.
 	// This parameter is required.
-	Addresses []addr.Address
+	Addresses []Address
 	// AuthConfig configuration information for authentication.
 	AuthConfig *AuthConfig
 	// BatchConfig configuration information for batch processing.

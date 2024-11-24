@@ -19,8 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/libgox/addr"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -256,7 +254,7 @@ func TestWriteAssignedIntegerField(t *testing.T) {
 
 func TestWriteWithBatchInterval(t *testing.T) {
 	c := testNewClient(t, &Config{
-		Addresses: []addr.Address{{
+		Addresses: []Address{{
 			Host: "127.0.0.1",
 			Port: 8086,
 		}},
@@ -303,7 +301,7 @@ END:
 
 func TestWriteWithBatchSize(t *testing.T) {
 	c := testNewClient(t, &Config{
-		Addresses: []addr.Address{{
+		Addresses: []Address{{
 			Host: "127.0.0.1",
 			Port: 8086,
 		}},
