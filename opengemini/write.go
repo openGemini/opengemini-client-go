@@ -175,7 +175,7 @@ func (c *client) internalBatchSend(ctx context.Context, database string, rp stri
 }
 
 func (c *client) newWriter(buffer *bytes.Buffer) io.Writer {
-	if c.config.GzipEnabled {
+	if c.config.CompressMethod == CompressMethodGzip {
 		return gzip.NewWriter(buffer)
 	} else {
 		return buffer
@@ -187,7 +187,7 @@ func (c *client) innerWrite(ctx context.Context, database string, rp string, buf
 		queryValues: make(url.Values),
 		body:        buffer,
 	}
-	if c.config.GzipEnabled {
+	if c.config.CompressMethod == CompressMethodGzip {
 		req.header = make(http.Header)
 		req.header.Set("Content-Encoding", "gzip")
 		req.header.Set("Accept-Encoding", "gzip")
