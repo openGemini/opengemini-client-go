@@ -130,7 +130,7 @@ func TestQueryWithMsgPack(t *testing.T) {
 
 func TestQueryWithZSTD(t *testing.T) {
 	c := testNewClient(t, &Config{
-		Addresses: []addr.Address{{
+		Addresses: []Address{{
 			Host: "localhost",
 			Port: 8086,
 		}},
@@ -188,7 +188,7 @@ func TestQueryWithZSTD(t *testing.T) {
 
 func TestQueryWithZSTDAndMsgPack(t *testing.T) {
 	c := testNewClient(t, &Config{
-		Addresses: []addr.Address{{
+		Addresses: []Address{{
 			Host: "localhost",
 			Port: 8086,
 		}},
