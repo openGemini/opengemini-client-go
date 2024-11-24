@@ -20,10 +20,10 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strconv"
 	"sync/atomic"
 	"time"
 
-	"github.com/libgox/addr"
 	"github.com/libgox/gocollections/syncx"
 )
 
@@ -109,14 +109,14 @@ func (c *client) Close() error {
 	return nil
 }
 
-func buildEndpoints(addresses []addr.Address, tlsEnabled bool) []endpoint {
+func buildEndpoints(addresses []Address, tlsEnabled bool) []endpoint {
 	urls := make([]endpoint, len(addresses))
 	protocol := "http://"
 	if tlsEnabled {
 		protocol = "https://"
 	}
 	for i, addr := range addresses {
-		urls[i] = endpoint{url: protocol + addr.Addr()}
+		urls[i] = endpoint{url: protocol + net.JoinHostPort(addr.Host, strconv.Itoa(addr.Port))}
 	}
 	return urls
 }

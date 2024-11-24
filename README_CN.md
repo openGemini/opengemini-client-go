@@ -33,7 +33,6 @@ go get github.com/openGemini/opengemini-client-go
 引入客户端库：
 
 ```go
-import "github.com/libgox/addr"
 import "github.com/openGemini/opengemini-client-go/opengemini"
 ```
 
@@ -41,7 +40,7 @@ import "github.com/openGemini/opengemini-client-go/opengemini"
 
 ```go
 config := &opengemini.Config{
-	Addresses: []*addr.Address{
+	Addresses: []*opengemini.Address{
 		{
 			Host: "127.0.0.1",
 			Port: 8086,

@@ -24,15 +24,13 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/libgox/addr"
-
 	"github.com/openGemini/opengemini-client-go/opengemini"
 )
 
 func main() {
 	// create an openGemini client
 	config := &opengemini.Config{
-		Addresses: []addr.Address{{
+		Addresses: []opengemini.Address{{
 			Host: "127.0.0.1",
 			Port: 8086,
 		}},

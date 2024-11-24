@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/libgox/addr"
-
 	"github.com/openGemini/opengemini-client-go/opengemini"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -28,7 +26,7 @@ import (
 func main() {
 	// create an openGemini client
 	configA := &opengemini.Config{
-		Addresses: []addr.Address{{
+		Addresses: []opengemini.Address{{
 			Host: "127.0.0.1",
 			Port: 8086,
 		}},
@@ -43,7 +41,7 @@ func main() {
 	}
 
 	configB := &opengemini.Config{
-		Addresses: []addr.Address{{
+		Addresses: []opengemini.Address{{
 			Host: "127.0.0.1",
 			Port: 8086,
 		}},
