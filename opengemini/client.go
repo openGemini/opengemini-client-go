@@ -32,10 +32,25 @@ const (
 
 type Codec string
 
+type ContentType string
+type CompressMethod string
+
+const (
+	ContentTypeMsgPack ContentType = "MSGPACK"
+	ContentTypeJSON    ContentType = "JSON"
+)
+
+const (
+	CompressMethodZstd CompressMethod = "ZSTD"
+	CompressMethodGzip CompressMethod = "GZIP"
+	CompressMethodNone CompressMethod = "NONE"
+)
+
 // Define constants for different encode/decode config
 
 const (
 	CodecMsgPack Codec = "MsgPack"
+	CodecZstd    Codec = "ZSTD"
 )
 
 // Client represents a openGemini client.
@@ -141,10 +156,10 @@ type Config struct {
 	// (keep-alive) connections to keep per-host. If zero,
 	// DefaultMaxIdleConnsPerHost is used.
 	MaxIdleConnsPerHost int
-	// GzipEnabled determines whether to use gzip for data transmission.
-	GzipEnabled bool
-	// Codec determines the Codec mode used for data transmission.
-	Codec Codec
+	// ContentType determines the content type used for data transmission.
+	ContentType ContentType
+	// CompressMethod determines the compress method used for data transmission.
+	CompressMethod CompressMethod
 	// TlsConfig configuration information for tls.
 	TlsConfig *tls.Config
 	// CustomMetricsLabels add custom labels to all the metrics reported by this client instance

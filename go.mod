@@ -3,6 +3,7 @@ module github.com/openGemini/opengemini-client-go
 go 1.21
 
 require (
+	github.com/klauspost/compress v1.17.9
 	github.com/libgox/gocollections v0.1.1
 	github.com/libgox/unicodex v0.1.0
 	github.com/prometheus/client_golang v1.20.5
@@ -14,7 +15,6 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

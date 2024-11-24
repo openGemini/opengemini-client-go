@@ -15,13 +15,24 @@
 package opengemini
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
 
+	"github.com/klauspost/compress/zstd"
 	"github.com/vmihailenco/msgpack/v5"
+)
+
+const (
+	HttpContentTypeMsgpack = "application/x-msgpack"
+	HttpContentTypeJSON    = "application/json"
+	HttpEncodingGzip       = "gzip"
+	HttpEncodingZstd       = "zstd"
 )
 
 type Query struct {
@@ -93,12 +104,24 @@ func buildRequestDetails(c *Config, requestModifier func(*requestDetails)) reque
 }
 
 func applyCodec(req *requestDetails, config *Config) {
-	if config.Codec == CodecMsgPack {
-		if req.header == nil {
-			req.header = make(http.Header)
-		}
-		req.header.Set("Accept", "application/x-msgpack")
+	if req.header == nil {
+		req.header = make(http.Header)
 	}
+
+	switch config.ContentType {
+	case ContentTypeMsgPack:
+		req.header.Set("Accept", HttpContentTypeMsgpack)
+	case ContentTypeJSON:
+		req.header.Set("Accept", HttpContentTypeJSON)
+	}
+
+	switch config.CompressMethod {
+	case CompressMethodGzip:
+		req.header.Set("Accept-Encoding", HttpEncodingGzip)
+	case CompressMethodZstd:
+		req.header.Set("Accept-Encoding", HttpEncodingZstd)
+	}
+
 }
 
 // retrieve query result from the response
@@ -112,17 +135,79 @@ func retrieveQueryResFromResp(resp *http.Response) (*QueryResult, error) {
 		return nil, errors.New("error resp, code: " + resp.Status + "body: " + string(body))
 	}
 	contentType := resp.Header.Get("Content-Type")
+	contentEncoding := resp.Header.Get("Content-Encoding")
 	var qr = new(QueryResult)
-	if contentType == "application/x-msgpack" {
-		err = msgpack.Unmarshal(body, qr)
+	var decompressedBody []byte
+
+	// First, handle decompression
+	switch contentEncoding {
+	case HttpEncodingZstd:
+		decompressedBody, err = decodeZstdBody(body)
 		if err != nil {
-			return nil, errors.New("unmarshal msgpack body failed, error: " + err.Error())
+			return qr, err
 		}
-	} else {
-		err = json.Unmarshal(body, qr)
+	case HttpEncodingGzip:
+		decompressedBody, err = decodeGzipBody(body)
 		if err != nil {
-			return nil, errors.New("unmarshal json body failed, error: " + err.Error())
+			return qr, err
 		}
+	default:
+		decompressedBody = body
 	}
-	return qr, nil
+
+	// Then, handle deserialization based on content type
+	switch contentType {
+	case HttpContentTypeMsgpack:
+		return qr, unmarshalMsgpack(decompressedBody, qr)
+	case HttpContentTypeJSON:
+		return qr, unmarshalJson(decompressedBody, qr)
+	default:
+		return qr, fmt.Errorf("unsupported content type: %s", contentType)
+	}
+}
+
+func decodeGzipBody(body []byte) ([]byte, error) {
+	decoder, err := gzip.NewReader(bytes.NewReader(body))
+	if err != nil {
+		return nil, errors.New("failed to create gzip decoder: " + err.Error())
+	}
+	defer decoder.Close()
+
+	decompressedBody, err := io.ReadAll(decoder)
+	if err != nil {
+		return nil, errors.New("failed to decompress gzip body: " + err.Error())
+	}
+
+	return decompressedBody, nil
+}
+
+func decodeZstdBody(compressedBody []byte) ([]byte, error) {
+	decoder, err := zstd.NewReader(nil)
+	if err != nil {
+		return nil, errors.New("failed to create zstd decoder: " + err.Error())
+	}
+	defer decoder.Close()
+
+	decompressedBody, err := decoder.DecodeAll(compressedBody, nil)
+	if err != nil {
+		return nil, errors.New("failed to decompress zstd body: " + err.Error())
+	}
+
+	return decompressedBody, nil
+}
+
+func unmarshalMsgpack(body []byte, qr *QueryResult) error {
+	err := msgpack.Unmarshal(body, qr)
+	if err != nil {
+		return errors.New("unmarshal msgpack body failed, error: " + err.Error())
+	}
+	return nil
+}
+
+func unmarshalJson(body []byte, qr *QueryResult) error {
+	err := json.Unmarshal(body, qr)
+	if err != nil {
+		return errors.New("unmarshal json body failed, error: " + err.Error())
+	}
+	return nil
 }
