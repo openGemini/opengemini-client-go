@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: skip generated files
+        run: rm -rf proto/*.pb.go
       - name: licenselint
         uses: shoothzj/licenselint@main
         with:
