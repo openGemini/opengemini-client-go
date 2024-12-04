@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: skip generated files and dot folders
-        run: rm -rf proto/*.pb.go && rm -rf .idea
+        run: rm -rf proto/*.pb.go
       - name: licenselint
         uses: shoothzj/licenselint@main
         with:
