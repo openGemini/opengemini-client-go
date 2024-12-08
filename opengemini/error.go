@@ -54,3 +54,10 @@ func checkDatabaseAndPolicy(database, retentionPolicy string) error {
 	}
 	return nil
 }
+
+func checkCommand(cmd string) error {
+	if len(cmd) == 0 {
+		return ErrEmptyCommand
+	}
+	return nil
+}

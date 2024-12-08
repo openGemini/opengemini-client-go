@@ -44,6 +44,10 @@ type Query struct {
 
 // Query sends a command to the server
 func (c *client) Query(q Query) (*QueryResult, error) {
+	if err := checkCommand(q.Command); err != nil {
+		return nil, err
+	}
+
 	req := buildRequestDetails(c.config, func(req *requestDetails) {
 		req.queryValues.Add("db", q.Database)
 		req.queryValues.Add("q", q.Command)
