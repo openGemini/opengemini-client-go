@@ -39,6 +39,7 @@ type client struct {
 	prevIdx     atomic.Int32
 	dataChanMap syncx.Map[dbRp, chan *sendBatchWithCB]
 	metrics     *metrics
+	rpcClient   *recordWriterClient
 
 	batchContext       context.Context
 	batchContextCancel context.CancelFunc
@@ -48,7 +49,7 @@ type client struct {
 
 func newClient(c *Config) (Client, error) {
 	if len(c.Addresses) == 0 {
-		return nil, errors.New("must have at least one address")
+		return nil, ErrEmptyAddress
 	}
 	if c.AuthConfig != nil {
 		if c.AuthConfig.AuthType == AuthTypeToken && len(c.AuthConfig.Token) == 0 {
@@ -90,6 +91,13 @@ func newClient(c *Config) (Client, error) {
 		dbClient.logger = c.Logger
 	} else {
 		dbClient.logger = slog.Default()
+	}
+	if c.RPCConfig != nil {
+		rc, err := newRecordWriterClient(c.RPCConfig)
+		if err != nil {
+			return nil, errors.New("failed to create rpc client: " + err.Error())
+		}
+		dbClient.rpcClient = rc
 	}
 	dbClient.prevIdx.Store(-1)
 	if len(c.Addresses) > 1 {
