@@ -18,9 +18,12 @@ import (
 	"context"
 	"crypto/tls"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/openGemini/opengemini-client-go/proto"
 )
 
 const (
@@ -33,6 +36,7 @@ const (
 type Codec string
 
 type ContentType string
+
 type CompressMethod string
 
 const (
@@ -69,6 +73,9 @@ type Client interface {
 	WriteBatchPoints(ctx context.Context, database string, bp []*Point) error
 	// WriteBatchPointsWithRp write batch points with retention policy
 	WriteBatchPointsWithRp(ctx context.Context, database string, rp string, bp []*Point) error
+	// WriteByGRPC write batch record to assigned database.retention_policy by gRPC.
+	// You'd better use NewRecordBuilder to build req.
+	WriteByGRPC(ctx context.Context, req *proto.WriteRequest) error
 
 	// CreateDatabase Create database
 	CreateDatabase(database string) error
@@ -166,6 +173,8 @@ type Config struct {
 	CustomMetricsLabels map[string]string
 	// Logger structured logger for logging operations
 	Logger *slog.Logger
+	// RPCConfig configuration information for write service by gRPC
+	RPCConfig *GRPCConfig
 }
 
 // Address configuration for providing service.
@@ -174,6 +183,10 @@ type Address struct {
 	Host string
 	// Port exposed service port.
 	Port int
+}
+
+func (a *Address) String() string {
+	return a.Host + ":" + strconv.Itoa(a.Port)
 }
 
 // AuthType type of identity authentication.
@@ -210,6 +223,23 @@ type RpConfig struct {
 	ShardGroupDuration string
 	// IndexDuration determines the time range of the index group
 	IndexDuration string
+}
+
+// GRPCConfig represents the configuration information for write service by gRPC.
+type GRPCConfig struct {
+	// Addresses Configure the service endpoints for the openGemini grpc write service.
+	// This parameter is required.
+	Addresses []Address
+	// AuthConfig configuration information for authentication.
+	AuthConfig *AuthConfig
+	// BatchConfig configuration information for batch processing.
+	BatchConfig *BatchConfig
+	// TlsConfig configuration information for tls.
+	TlsConfig *tls.Config
+	// CompressMethod determines the compress method used for data transmission.
+	CompressMethod CompressMethod
+	// Timeout default 30s
+	Timeout time.Duration
 }
 
 // NewClient Creates a openGemini client instance

@@ -27,6 +27,8 @@ var (
 	ErrEmptyTagOrField   = errors.New("empty tag or field")
 	ErrEmptyTagKey       = errors.New("empty tag key")
 	ErrRetentionPolicy   = errors.New("empty retention policy")
+	ErrEmptyRecord       = errors.New("empty record")
+	ErrEmptyAddress      = errors.New("empty address, must have at least one address")
 )
 
 // checkDatabaseName checks if the database name is empty and returns an error if it is.
