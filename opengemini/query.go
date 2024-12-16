@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/golang/snappy"
 	"github.com/klauspost/compress/zstd"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -33,6 +34,7 @@ const (
 	HttpContentTypeJSON    = "application/json"
 	HttpEncodingGzip       = "gzip"
 	HttpEncodingZstd       = "zstd"
+	HttpEncodingSnappy     = "snappy"
 )
 
 type Query struct {
@@ -124,6 +126,8 @@ func applyCodec(req *requestDetails, config *Config) {
 		req.header.Set("Accept-Encoding", HttpEncodingGzip)
 	case CompressMethodZstd:
 		req.header.Set("Accept-Encoding", HttpEncodingZstd)
+	case CompressMethodSnappy:
+		req.header.Set("Accept-Encoding", HttpEncodingSnappy)
 	}
 
 }
@@ -141,32 +145,32 @@ func retrieveQueryResFromResp(resp *http.Response) (*QueryResult, error) {
 	contentType := resp.Header.Get("Content-Type")
 	contentEncoding := resp.Header.Get("Content-Encoding")
 	var qr = new(QueryResult)
-	var decompressedBody []byte
 
-	// First, handle decompression
-	switch contentEncoding {
-	case HttpEncodingZstd:
-		decompressedBody, err = decodeZstdBody(body)
-		if err != nil {
-			return qr, err
-		}
-	case HttpEncodingGzip:
-		decompressedBody, err = decodeGzipBody(body)
-		if err != nil {
-			return qr, err
-		}
-	default:
-		decompressedBody = body
+	// handle decompression first
+	decompressedBody, err := decompressBody(contentEncoding, body)
+	if err != nil {
+		return qr, err
 	}
 
-	// Then, handle deserialization based on content type
-	switch contentType {
-	case HttpContentTypeMsgpack:
-		return qr, unmarshalMsgpack(decompressedBody, qr)
-	case HttpContentTypeJSON:
-		return qr, unmarshalJson(decompressedBody, qr)
+	// then handle deserialization based on content type
+	err = deserializeBody(contentType, decompressedBody, qr)
+	if err != nil {
+		return qr, err
+	}
+
+	return qr, nil
+}
+
+func decompressBody(encoding string, body []byte) ([]byte, error) {
+	switch encoding {
+	case HttpEncodingZstd:
+		return decodeZstdBody(body)
+	case HttpEncodingGzip:
+		return decodeGzipBody(body)
+	case HttpEncodingSnappy:
+		return decodeSnappyBody(body)
 	default:
-		return qr, fmt.Errorf("unsupported content type: %s", contentType)
+		return body, nil
 	}
 }
 
@@ -198,6 +202,26 @@ func decodeZstdBody(compressedBody []byte) ([]byte, error) {
 	}
 
 	return decompressedBody, nil
+}
+
+func decodeSnappyBody(compressedBody []byte) ([]byte, error) {
+	reader := snappy.NewReader(bytes.NewReader(compressedBody))
+	decompressedBody, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, errors.New("failed to decompress snappy body: " + err.Error())
+	}
+	return decompressedBody, nil
+}
+
+func deserializeBody(contentType string, body []byte, qr *QueryResult) error {
+	switch contentType {
+	case HttpContentTypeMsgpack:
+		return unmarshalMsgpack(body, qr)
+	case HttpContentTypeJSON:
+		return unmarshalJson(body, qr)
+	default:
+		return fmt.Errorf("unsupported content type: %s", contentType)
+	}
 }
 
 func unmarshalMsgpack(body []byte, qr *QueryResult) error {

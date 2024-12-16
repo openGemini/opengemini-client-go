@@ -41,16 +41,10 @@ const (
 )
 
 const (
-	CompressMethodZstd CompressMethod = "ZSTD"
-	CompressMethodGzip CompressMethod = "GZIP"
-	CompressMethodNone CompressMethod = "NONE"
-)
-
-// Define constants for different encode/decode config
-
-const (
-	CodecMsgPack Codec = "MsgPack"
-	CodecZstd    Codec = "ZSTD"
+	CompressMethodZstd   CompressMethod = "ZSTD"
+	CompressMethodGzip   CompressMethod = "GZIP"
+	CompressMethodSnappy CompressMethod = "SNAPPY"
+	CompressMethodNone   CompressMethod = "NONE"
 )
 
 // Client represents a openGemini client.
