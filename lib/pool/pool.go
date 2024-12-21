@@ -4,14 +4,13 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package pool
 
 import (
@@ -19,25 +18,37 @@ import (
 )
 
 type CachePool struct {
-	pool sync.Pool
-	size chan struct{}
+	pool    sync.Pool
+	size    chan struct{}
+	newFunc func() interface{}
 }
 
 func NewCachePool(newFunc func() interface{}, maxSize int) *CachePool {
 	return &CachePool{
 		pool: sync.Pool{
-			New: newFunc,
+			New: func() interface{} {
+				if newFunc != nil {
+					return newFunc()
+				}
+				return nil
+			},
 		},
-		size: make(chan struct{}, maxSize),
+		size:    make(chan struct{}, maxSize),
+		newFunc: newFunc,
 	}
 }
 
 func (c *CachePool) Get() interface{} {
 	select {
 	case c.size <- struct{}{}:
-		return c.pool.Get()
+		item := c.pool.Get()
+		if item == nil && c.newFunc != nil {
+			item = c.newFunc()
+		}
+		return item
 	default:
-		return c.pool.New()
+
+		return nil
 	}
 }
 
@@ -48,4 +59,12 @@ func (c *CachePool) Put(x interface{}) {
 	default:
 		// Pool is full, discard the item
 	}
+}
+
+func (c *CachePool) AvailableCapacity() int {
+	return cap(c.size) - len(c.size)
+}
+
+func (c *CachePool) CurrentLength() int {
+	return len(c.size)
 }
