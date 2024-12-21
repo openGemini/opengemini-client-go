@@ -18,9 +18,9 @@ import (
 )
 
 type CachePool struct {
-	pool    sync.Pool
-	size    chan struct{}
-	newFunc func() interface{}
+	pool         sync.Pool
+	capacityChan chan struct{}
+	newFunc      func() interface{}
 }
 
 func NewCachePool(newFunc func() interface{}, maxSize int) *CachePool {
@@ -33,14 +33,14 @@ func NewCachePool(newFunc func() interface{}, maxSize int) *CachePool {
 				return nil
 			},
 		},
-		size:    make(chan struct{}, maxSize),
-		newFunc: newFunc,
+		capacityChan: make(chan struct{}, maxSize),
+		newFunc:      newFunc,
 	}
 }
 
 func (c *CachePool) Get() interface{} {
 	select {
-	case c.size <- struct{}{}:
+	case c.capacityChan <- struct{}{}:
 		item := c.pool.Get()
 		if item == nil && c.newFunc != nil {
 			item = c.newFunc()
@@ -54,17 +54,17 @@ func (c *CachePool) Get() interface{} {
 
 func (c *CachePool) Put(x interface{}) {
 	select {
-	case <-c.size:
+	case <-c.capacityChan:
 		c.pool.Put(x)
 	default:
 		// Pool is full, discard the item
 	}
 }
 
-func (c *CachePool) AvailableCapacity() int {
-	return cap(c.size) - len(c.size)
+func (c *CachePool) AvailableOffers() int {
+	return cap(c.capacityChan) - len(c.capacityChan)
 }
 
-func (c *CachePool) CurrentLength() int {
-	return len(c.size)
+func (c *CachePool) Capacity() int {
+	return cap(c.capacityChan)
 }

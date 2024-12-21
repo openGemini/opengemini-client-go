@@ -37,7 +37,9 @@ var (
 )
 
 func GetGzipReader(body []byte) (*gzip.Reader, error) {
-	if gzipReaderPool.CurrentLength() == 0 {
+	// gzip reader not support new with nil writer
+	// so we need to create a new reader if pool is empty
+	if gzipReaderPool.AvailableOffers() == gzipReaderPool.Capacity() {
 		return gzip.NewReader(bytes.NewReader(body))
 	}
 	reader := gzipReaderPool.Get().(*gzip.Reader)
