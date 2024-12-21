@@ -46,7 +46,10 @@ func GetGzipReader(body []byte) (*gzip.Reader, error) {
 	if reader == nil {
 		return nil, errors.New("failed to get gzip reader")
 	}
-	reader.Reset(bytes.NewReader(body))
+	err := reader.Reset(bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
 	return reader, nil
 }
 
@@ -61,6 +64,7 @@ func GetSnappyReader(body []byte) (*snappy.Reader, error) {
 		return nil, errors.New("failed to get snappy reader")
 	}
 	reader.Reset(bytes.NewReader(body))
+
 	return reader, nil
 }
 
@@ -73,11 +77,17 @@ func GetZstdDecoder(body []byte) (*zstd.Decoder, error) {
 	if decoder == nil {
 		return nil, errors.New("failed to get zstd decoder")
 	}
-	decoder.Reset(bytes.NewReader(body))
+	err := decoder.Reset(bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
 	return decoder, nil
 }
 
 func PutZstdDecoder(decoder *zstd.Decoder) {
-	decoder.Reset(nil)
+	err := decoder.Reset(nil)
+	if err != nil {
+		return
+	}
 	zstdDecoderPool.Put(decoder)
 }

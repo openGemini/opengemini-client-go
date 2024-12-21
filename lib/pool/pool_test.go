@@ -44,7 +44,7 @@ func TestCachePool(t *testing.T) {
 	}
 
 	if pool.AvailableOffers() != 1 {
-		t.Errorf("expected pool lefted capcity to be 1, got %d", pool.AvailableOffers())
+		t.Errorf("The expected remaining capacity of the pool is 1, got %d", pool.AvailableOffers())
 	}
 	pool.Put(item2)
 
@@ -59,13 +59,13 @@ func TestCachePool(t *testing.T) {
 	}
 
 	if pool.AvailableOffers() != 0 {
-		t.Errorf("expected pool lefted capcity to be 0, got %d", pool.AvailableOffers())
+		t.Errorf("The expected remaining capacity of the pool is 0, got %d", pool.AvailableOffers())
 	}
 
 	pool.Put(item3)
 	pool.Put(item4)
 
 	if pool.AvailableOffers() != 2 {
-		t.Errorf("expected pool lefted capcity to be 2, got %d", pool.AvailableOffers())
+		t.Errorf("The expected remaining capacity of the pool is 2, got %d", pool.AvailableOffers())
 	}
 }
