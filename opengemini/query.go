@@ -15,8 +15,6 @@
 package opengemini
 
 import (
-	"bytes"
-	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,8 +22,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang/snappy"
-	"github.com/klauspost/compress/zstd"
+	compressionPool "github.com/openGemini/opengemini-client-go/lib/pool"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -175,11 +172,11 @@ func decompressBody(encoding string, body []byte) ([]byte, error) {
 }
 
 func decodeGzipBody(body []byte) ([]byte, error) {
-	decoder, err := gzip.NewReader(bytes.NewReader(body))
+	decoder, err := compressionPool.GetGzipReader(body)
 	if err != nil {
 		return nil, errors.New("failed to create gzip decoder: " + err.Error())
 	}
-	defer decoder.Close()
+	defer compressionPool.PutGzipReader(decoder)
 
 	decompressedBody, err := io.ReadAll(decoder)
 	if err != nil {
@@ -190,11 +187,11 @@ func decodeGzipBody(body []byte) ([]byte, error) {
 }
 
 func decodeZstdBody(compressedBody []byte) ([]byte, error) {
-	decoder, err := zstd.NewReader(nil)
+	decoder, err := compressionPool.GetZstdDecoder(compressedBody)
 	if err != nil {
 		return nil, errors.New("failed to create zstd decoder: " + err.Error())
 	}
-	defer decoder.Close()
+	defer compressionPool.PutZstdDecoder(decoder)
 
 	decompressedBody, err := decoder.DecodeAll(compressedBody, nil)
 	if err != nil {
@@ -205,7 +202,11 @@ func decodeZstdBody(compressedBody []byte) ([]byte, error) {
 }
 
 func decodeSnappyBody(compressedBody []byte) ([]byte, error) {
-	reader := snappy.NewReader(bytes.NewReader(compressedBody))
+	reader, err := compressionPool.GetSnappyReader(compressedBody)
+	if err != nil {
+		return nil, errors.New("failed to create snappy reader: " + err.Error())
+	}
+	defer compressionPool.PutSnappyReader(reader)
 	decompressedBody, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("failed to decompress snappy body: " + err.Error())

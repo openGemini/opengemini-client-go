@@ -18,34 +18,54 @@ import (
 	"sync"
 )
 
-type CachePool struct {
-	pool sync.Pool
-	size chan struct{}
+type CachePool[T any] struct {
+	pool         sync.Pool
+	capacityChan chan struct{}
+	newFunc      func() T
 }
 
-func NewCachePool(newFunc func() interface{}, maxSize int) *CachePool {
-	return &CachePool{
+func NewCachePool[T any](newFunc func() T, maxSize int) *CachePool[T] {
+	return &CachePool[T]{
 		pool: sync.Pool{
-			New: newFunc,
+			New: func() interface{} {
+				if newFunc != nil {
+					return newFunc()
+				}
+				return nil
+			},
 		},
-		size: make(chan struct{}, maxSize),
+		capacityChan: make(chan struct{}, maxSize),
+		newFunc:      newFunc,
 	}
 }
 
-func (c *CachePool) Get() interface{} {
+func (c *CachePool[T]) Get() T {
 	select {
-	case c.size <- struct{}{}:
-		return c.pool.Get()
+	case c.capacityChan <- struct{}{}:
+		item := c.pool.Get()
+		if item == nil && c.newFunc != nil {
+			return c.newFunc()
+		}
+		return item.(T)
 	default:
-		return c.pool.New()
+		var zero T
+		return zero
 	}
 }
 
-func (c *CachePool) Put(x interface{}) {
+func (c *CachePool[T]) Put(x T) {
 	select {
-	case <-c.size:
+	case <-c.capacityChan:
 		c.pool.Put(x)
 	default:
 		// Pool is full, discard the item
 	}
+}
+
+func (c *CachePool[T]) AvailableOffers() int {
+	return cap(c.capacityChan) - len(c.capacityChan)
+}
+
+func (c *CachePool[T]) Capacity() int {
+	return cap(c.capacityChan)
 }
