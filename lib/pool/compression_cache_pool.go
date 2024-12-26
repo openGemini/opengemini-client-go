@@ -25,51 +25,52 @@ import (
 )
 
 var (
-	gzipReaderPool = NewCachePool[*gzip.Reader](nil, 2*runtime.NumCPU())
+	gzipReaderPool = NewCachePool[*gzip.Reader](func() *gzip.Reader {
+		return new(gzip.Reader)
+	}, 2*runtime.NumCPU())
 
 	snappyReaderPool = NewCachePool[*snappy.Reader](func() *snappy.Reader {
-		return snappy.NewReader(bytes.NewReader(nil))
+		return snappy.NewReader(nil)
 	}, 2*runtime.NumCPU())
 
 	zstdDecoderPool = NewCachePool[*zstd.Decoder](func() *zstd.Decoder {
-		decoder, _ := zstd.NewReader(nil)
+		decoder, error := zstd.NewReader(nil)
+		if error != nil {
+			return nil
+		}
 		return decoder
 	}, 2*runtime.NumCPU())
 )
 
 func GetGzipReader(body []byte) (*gzip.Reader, error) {
-	// gzip reader not support new with nil writer
-	// so we need to create a new reader if pool is empty
-	if gzipReaderPool.AvailableOffers() == gzipReaderPool.Capacity() {
-		return gzip.NewReader(bytes.NewReader(body))
-	}
-	reader := gzipReaderPool.Get()
-	if reader == nil {
+	gzipReader := gzipReaderPool.Get()
+	if gzipReader == nil {
 		return nil, errors.New("failed to get gzip reader")
 	}
-	err := reader.Reset(bytes.NewReader(body))
+	err := gzipReader.Reset(bytes.NewReader(body))
 	if err != nil {
+		gzipReaderPool.Put(gzipReader) // Return the reader to the pool if reset fails
 		return nil, err
 	}
-	return reader, nil
+	return gzipReader, nil
 }
 
 func PutGzipReader(reader *gzip.Reader) {
-	reader.Close()
 	gzipReaderPool.Put(reader)
 }
 
 func GetSnappyReader(body []byte) (*snappy.Reader, error) {
-	reader := snappyReaderPool.Get()
-	if reader == nil {
+	snappyReader := snappyReaderPool.Get()
+	if snappyReader == nil {
 		return nil, errors.New("failed to get snappy reader")
 	}
-	reader.Reset(bytes.NewReader(body))
 
-	return reader, nil
+	snappyReader.Reset(bytes.NewReader(body))
+	return snappyReader, nil
 }
 
 func PutSnappyReader(reader *snappy.Reader) {
+	reader.Reset(nil)
 	snappyReaderPool.Put(reader)
 }
 
@@ -78,8 +79,10 @@ func GetZstdDecoder(body []byte) (*zstd.Decoder, error) {
 	if decoder == nil {
 		return nil, errors.New("failed to get zstd decoder")
 	}
+
 	err := decoder.Reset(bytes.NewReader(body))
 	if err != nil {
+		zstdDecoderPool.Put(decoder) // Return the decoder to the pool if reset fails
 		return nil, err
 	}
 	return decoder, nil

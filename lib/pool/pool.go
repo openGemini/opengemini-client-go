@@ -28,10 +28,7 @@ func NewCachePool[T any](newFunc func() T, maxSize int) *CachePool[T] {
 	return &CachePool[T]{
 		pool: sync.Pool{
 			New: func() interface{} {
-				if newFunc != nil {
-					return newFunc()
-				}
-				return nil
+				return newFunc()
 			},
 		},
 		capacityChan: make(chan struct{}, maxSize),
@@ -41,31 +38,20 @@ func NewCachePool[T any](newFunc func() T, maxSize int) *CachePool[T] {
 
 func (c *CachePool[T]) Get() T {
 	select {
-	case c.capacityChan <- struct{}{}:
+	case <-c.capacityChan:
 		item := c.pool.Get()
-		if item == nil && c.newFunc != nil {
-			return c.newFunc()
-		}
+
 		return item.(T)
 	default:
-		var zero T
-		return zero
+		return c.newFunc()
 	}
 }
 
 func (c *CachePool[T]) Put(x T) {
 	select {
-	case <-c.capacityChan:
+	case c.capacityChan <- struct{}{}:
 		c.pool.Put(x)
 	default:
 		// Pool is full, discard the item
 	}
-}
-
-func (c *CachePool[T]) AvailableOffers() int {
-	return cap(c.capacityChan) - len(c.capacityChan)
-}
-
-func (c *CachePool[T]) Capacity() int {
-	return cap(c.capacityChan)
 }

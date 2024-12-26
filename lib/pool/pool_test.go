@@ -44,29 +44,34 @@ func TestCachePool(t *testing.T) {
 		t.Errorf("expected the same item, got different items")
 	}
 
-	if pool.AvailableOffers() != 1 {
-		t.Errorf("The expected remaining capacity of the pool is 1, got %d", pool.AvailableOffers())
-	}
+}
+
+func TestPoolDiscardWhenFull(t *testing.T) {
+	// Create a pool with a capacity of 1
+	pool := NewCachePool(func() interface{} {
+		return 1
+	}, 1)
+
+	// Get an item from the pool
+	item1 := pool.Get().(int)
+
+	// Put the item back into the pool
+	pool.Put(item1)
+
+	// Try to put another item into the pool, which should be discarded
+	item2 := 2
 	pool.Put(item2)
 
-	item3 := pool.Get().(*struct{})
-	if item3 == nil {
-		t.Errorf("expected non-nil item, got nil")
+	// Get an item from the pool
+	item3 := pool.Get().(int)
+
+	// Ensure the item is the same as the first one, meaning the second item was discarded
+	if item1 != item3 {
+		t.Errorf("expected the same item, got different items")
 	}
 
-	item4 := pool.Get().(*struct{})
-	if item4 == nil {
-		t.Errorf("expected non-nil item, got nil")
-	}
-
-	if pool.AvailableOffers() != 0 {
-		t.Errorf("The expected remaining capacity of the pool is 0, got %d", pool.AvailableOffers())
-	}
-
-	pool.Put(item3)
-	pool.Put(item4)
-
-	if pool.AvailableOffers() != 2 {
-		t.Errorf("The expected remaining capacity of the pool is 2, got %d", pool.AvailableOffers())
+	// Ensure the discarded item is not the same as the one in the pool
+	if item2 == item3 {
+		t.Errorf("expected different items, got the same item")
 	}
 }
