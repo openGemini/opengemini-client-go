@@ -177,34 +177,36 @@ func TestClient_ShowTagValues(t *testing.T) {
 	}
 	time.Sleep(time.Second * 5)
 
-	// SHOW TAG VALUES FROM measurement WITH KEY = location
+	// SHOW TAG VALUES FROM measurement WITH KEY = location ORDER BY location ASC
 	tagValueResult, err := c.ShowTagValues(NewShowTagValuesBuilder().Database(databaseName).Measurement(measurement).
-		With("location"))
+		With("location").OrderBy("location", Asc))
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(tagValueResult))
 	expValues := []string{"c1", "c2", "u1", "u2"}
-	sort.Strings(expValues)
-	sort.Strings(tagValueResult)
+	assert.EqualValues(t, expValues, tagValueResult)
+
+	// SHOW TAG VALUES FROM measurement WITH KEY = location ORDER BY location DESC
+	tagValueResult, err = c.ShowTagValues(NewShowTagValuesBuilder().Database(databaseName).Measurement(measurement).
+		With("location").OrderBy("location", Desc))
+	assert.Nil(t, err)
+	assert.Equal(t, 4, len(tagValueResult))
+	expValues = []string{"u2", "u1", "c2", "c1"}
 	assert.EqualValues(t, expValues, tagValueResult)
 
 	// SHOW TAG VALUES FROM measurement WITH KEY = location LIMIT 2 OFFSET 0
 	tagValueResult, err = c.ShowTagValues(NewShowTagValuesBuilder().Database(databaseName).Measurement(measurement).
-		With("location").Limit(2).Offset(0))
+		With("location").Limit(2).Offset(0).OrderBy("location", Asc))
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(tagValueResult))
 	expValues = []string{"c1", "c2"}
-	sort.Strings(expValues)
-	sort.Strings(tagValueResult)
 	assert.EqualValues(t, expValues, tagValueResult)
 
 	// SHOW TAG VALUES FROM measurement WITH KEY = location LIMIT 2 OFFSET 2
 	tagValueResult, err = c.ShowTagValues(NewShowTagValuesBuilder().Database(databaseName).Measurement(measurement).
-		With("location").Limit(2).Offset(2))
+		With("location").Limit(2).Offset(2).OrderBy("location", Asc))
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(tagValueResult))
 	expValues = []string{"u1", "u2"}
-	sort.Strings(expValues)
-	sort.Strings(tagValueResult)
 	assert.EqualValues(t, expValues, tagValueResult)
 
 	// SHOW TAG VALUES FROM measurement WITH KEY = location LIMIT 2 OFFSET 2 WHERE country = cn
@@ -281,34 +283,36 @@ func TestClient_ShowTagValues_WithRegexp(t *testing.T) {
 	}
 	time.Sleep(time.Second * 5)
 
-	// SHOW TAG VALUES FROM measurement WITH KEY = /loc.*/
+	// SHOW TAG VALUES FROM measurement WITH KEY = /loc.*/ order by location ASC
 	tagValueResult, err := c.ShowTagValues(NewShowTagValuesBuilder().Database(databaseName).Measurement(measurement).
-		With("/loc.*/"))
+		With("/loc.*/").OrderBy("location", Asc))
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(tagValueResult))
 	expValues := []string{"c1", "c2", "u1", "u2"}
-	sort.Strings(expValues)
-	sort.Strings(tagValueResult)
+	assert.EqualValues(t, expValues, tagValueResult)
+
+	// SHOW TAG VALUES FROM measurement WITH KEY = /loc.*/ order by location ASC
+	tagValueResult, err = c.ShowTagValues(NewShowTagValuesBuilder().Database(databaseName).Measurement(measurement).
+		With("/loc.*/").OrderBy("location", Desc))
+	assert.Nil(t, err)
+	assert.Equal(t, 4, len(tagValueResult))
+	expValues = []string{"u2", "u1", "c2", "c1"}
 	assert.EqualValues(t, expValues, tagValueResult)
 
 	// SHOW TAG VALUES FROM measurement WITH KEY = /loc./ LIMIT 2 OFFSET 0
 	tagValueResult, err = c.ShowTagValues(NewShowTagValuesBuilder().Database(databaseName).Measurement(measurement).
-		With("/loc.*/").Limit(2).Offset(0))
+		With("/loc.*/").Limit(2).Offset(0).OrderBy("location", Asc))
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(tagValueResult))
 	expValues = []string{"c1", "c2"}
-	sort.Strings(expValues)
-	sort.Strings(tagValueResult)
 	assert.EqualValues(t, expValues, tagValueResult)
 
 	// SHOW TAG VALUES FROM measurement WITH KEY = /loc./ LIMIT 2 OFFSET 2
 	tagValueResult, err = c.ShowTagValues(NewShowTagValuesBuilder().Database(databaseName).Measurement(measurement).
-		With("/loc.*/").Limit(2).Offset(2))
+		With("/loc.*/").Limit(2).Offset(2).OrderBy("location", Asc))
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(tagValueResult))
 	expValues = []string{"u1", "u2"}
-	sort.Strings(expValues)
-	sort.Strings(tagValueResult)
 	assert.EqualValues(t, expValues, tagValueResult)
 
 	// SHOW TAG VALUES FROM measurement WITH KEY = /loc./ LIMIT 2 OFFSET 2 WHERE country = cn
@@ -387,7 +391,7 @@ func TestClient_ShowTagValues_WithIn(t *testing.T) {
 
 	// SHOW TAG VALUES FROM measurement WITH KEY IN (location, country)
 	tagValueResult, err := c.ShowTagValues(NewShowTagValuesBuilder().Database(databaseName).Measurement(measurement).
-		With("location", "country"))
+		With("location", "country").OrderBy("location", Asc).OrderBy("country", Asc))
 	assert.Nil(t, err)
 	assert.Equal(t, 6, len(tagValueResult))
 	expValues := []string{"c1", "c2", "u1", "u2", "cn", "us"}
@@ -397,13 +401,13 @@ func TestClient_ShowTagValues_WithIn(t *testing.T) {
 
 	// SHOW TAG VALUES FROM measurement WITH KEY IN (location, country) LIMIT 2 OFFSET 0
 	tagValueResult, err = c.ShowTagValues(NewShowTagValuesBuilder().Database(databaseName).Measurement(measurement).
-		With("location", "country").Limit(2).Offset(0))
+		With("location", "country").Limit(2).Offset(0).OrderBy("location", Asc))
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(tagValueResult))
 
 	// SHOW TAG VALUES FROM measurement WITH KEY IN (location, country) LIMIT 2 OFFSET 2
 	tagValueResult, err = c.ShowTagValues(NewShowTagValuesBuilder().Database(databaseName).Measurement(measurement).
-		With("location", "country").Limit(2).Offset(2))
+		With("location", "country").Limit(2).Offset(2).OrderBy("location", Asc))
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(tagValueResult))
 
@@ -419,6 +423,90 @@ func TestClient_ShowTagValues_Error_NoWithKey(t *testing.T) {
 		Measurement("not-exist-measurement"))
 	assert.NotNil(t, err)
 	assert.Equal(t, ErrEmptyTagKey, err)
+}
+
+func TestClient_ShowTagValues_OrderBy(t *testing.T) {
+	c := testDefaultClient(t)
+	databaseName := randomDatabaseName()
+	err := c.CreateDatabase(databaseName)
+	require.Nil(t, err)
+	measurement := randomMeasurement()
+	defer func() {
+		err := c.DropDatabase(databaseName)
+		assert.Nil(t, err)
+	}()
+	callback := func(err error) {
+		assert.Nil(t, err)
+	}
+
+	points := []*Point{
+		{
+			Measurement: measurement,
+			Tags: map[string]string{
+				"location": "c1",
+				"country":  "cn",
+			},
+			Fields: map[string]interface{}{
+				"weather":     "sun",
+				"temperature": 25.0,
+			},
+		},
+		{
+			Measurement: measurement,
+			Tags: map[string]string{
+				"location": "c2",
+				"country":  "cn",
+			},
+			Fields: map[string]interface{}{
+				"weather":     "sun",
+				"temperature": 26.0,
+			},
+		},
+		{
+			Measurement: measurement,
+			Tags: map[string]string{
+				"location": "u1",
+				"country":  "us",
+			},
+			Fields: map[string]interface{}{
+				"weather":     "sun",
+				"temperature": 35.0,
+			},
+		},
+		{
+			Measurement: measurement,
+			Tags: map[string]string{
+				"location": "u2",
+				"country":  "us",
+			},
+			Fields: map[string]interface{}{
+				"weather":     "sun",
+				"temperature": 36.0,
+			},
+		},
+	}
+
+	for _, point := range points {
+		err := c.WritePoint(databaseName, point, callback)
+		assert.Nil(t, err)
+	}
+	time.Sleep(time.Second * 5)
+
+	// SHOW TAG VALUES FROM measurement WITH KEY = location order by location asc
+	tagValueResult, err := c.ShowTagValues(NewShowTagValuesBuilder().Database(databaseName).Measurement(measurement).
+		With("location").OrderBy("location", Asc))
+	assert.Nil(t, err)
+	assert.Equal(t, 4, len(tagValueResult))
+	expValues := []string{"c1", "c2", "u1", "u2"}
+	assert.EqualValues(t, expValues, tagValueResult)
+
+	// SHOW TAG VALUES FROM measurement WITH KEY = location order by location desc
+	tagValueResult, err = c.ShowTagValues(NewShowTagValuesBuilder().Database(databaseName).Measurement(measurement).
+		With("location").OrderBy("location", Desc))
+	assert.Nil(t, err)
+	assert.Equal(t, 4, len(tagValueResult))
+	expValues = []string{"u2", "u1", "c2", "c1"}
+	assert.EqualValues(t, expValues, tagValueResult)
 }
 
 func TestClient_ShowSeries(t *testing.T) {

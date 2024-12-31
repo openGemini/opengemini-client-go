@@ -395,6 +395,8 @@ type ShowTagValuesBuilder interface {
 	Limit(limit int) ShowTagValuesBuilder
 	// Offset specify offset
 	Offset(offset int) ShowTagValuesBuilder
+	// OrderBy specify order by
+	OrderBy(field string, order SortOrder) ShowTagValuesBuilder
 	// With supports specifying a tag key, a regular expression or multiple tag keys, if set multiple keys, it will
 	// return all tag field values, if set keys length is one and such as /regex/ it will match the regex, otherwise it
 	// show one tag field values.
@@ -410,8 +412,14 @@ type showTagValuesBuilder struct {
 	measurementBase
 	limit   int
 	offset  int
+	orders  []string
 	withKey []string
 	where   *ComparisonCondition
+}
+
+func (s *showTagValuesBuilder) OrderBy(field string, order SortOrder) ShowTagValuesBuilder {
+	s.orders = append(s.orders, fmt.Sprintf("%s %s", field, order))
+	return s
 }
 
 func NewShowTagValuesBuilder() ShowTagValuesBuilder {
@@ -482,6 +490,10 @@ func (s *showTagValuesBuilder) build() (string, error) {
 
 	if s.where != nil {
 		buff.WriteString(" WHERE " + s.where.build())
+	}
+
+	if len(s.orders) != 0 {
+		buff.WriteString(" ORDER BY " + strings.Join(s.orders, ","))
 	}
 
 	if s.limit > 0 {
