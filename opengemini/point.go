@@ -69,13 +69,24 @@ func (p Precision) Epoch() string {
 	return ""
 }
 
+// Point represents a single point in the line protocol format.
+// A Point is composed of a measurement name, zero or more tags, one or more fields, and a timestamp.
 type Point struct {
+	// Measurement is the line protocol measurement name definition.
 	Measurement string
-	// Precision Timestamp precision ,default value is  PrecisionNanosecond
+	// Precision Timestamp precision, default value is PrecisionNanosecond
 	Precision Precision
-	Time      time.Time
-	Tags      map[string]string
-	Fields    map[string]interface{}
+	// Time is the line protocol time field definition.
+	// Deprecated: Use Timestamp instead. Will be removed in 0.10.0.
+	Time time.Time
+	// Timestamp Point creation timestamp, default value is Now() in nanoseconds.
+	// If p.Time is not zero, Timestamp will be set to p.Time.UnixNano() / int64(p.Precision).
+	// If Timestamp is zero, Timestamp will be set to current time.
+	Timestamp int64
+	// Tags is the line protocol tag field definition.
+	Tags map[string]string
+	// Fields is the line protocol value field definition.
+	Fields map[string]interface{}
 }
 
 func (p *Point) AddTag(key string, value string) {
@@ -237,12 +248,18 @@ func (enc *LineProtocolEncoder) Encode(p *Point) error {
 		}
 	}
 
-	if !p.Time.IsZero() {
+	if p.Timestamp != 0 || !p.Time.IsZero() {
 		if err := enc.writeByte(' '); err != nil {
 			return err
 		}
-		if _, err := io.WriteString(enc.w, formatTimestamp(p.Time, p.Precision)); err != nil {
-			return err
+		if p.Timestamp != 0 {
+			if _, err := io.WriteString(enc.w, strconv.FormatInt(p.Timestamp, 10)); err != nil {
+				return err
+			}
+		} else if !p.Time.IsZero() {
+			if _, err := io.WriteString(enc.w, formatTimestamp(p.Time, p.Precision)); err != nil {
+				return err
+			}
 		}
 	}
 
