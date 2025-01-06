@@ -70,6 +70,7 @@ func TestQueryWithEpoch(t *testing.T) {
 		assert.Equal(t, length, getTimestampLength(v))
 	}
 }
+
 func TestQueryWithMsgPack(t *testing.T) {
 	c := testNewClient(t, &Config{
 		Addresses: []Address{{
