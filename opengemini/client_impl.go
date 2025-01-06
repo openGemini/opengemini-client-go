@@ -106,6 +106,7 @@ func (c *client) Close() error {
 		c.dataChanMap.Delete(key)
 		return true
 	})
+	c.cli.CloseIdleConnections()
 	return nil
 }
 
