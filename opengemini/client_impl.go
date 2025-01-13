@@ -48,7 +48,7 @@ type client struct {
 
 func newClient(c *Config) (Client, error) {
 	if len(c.Addresses) == 0 {
-		return nil, errors.New("must have at least one address")
+		return nil, ErrNoAddress
 	}
 	if c.AuthConfig != nil {
 		if c.AuthConfig.AuthType == AuthTypeToken && len(c.AuthConfig.Token) == 0 {

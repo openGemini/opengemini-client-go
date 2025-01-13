@@ -26,6 +26,7 @@ var (
 	ErrEmptyCommand      = errors.New("empty command")
 	ErrEmptyTagOrField   = errors.New("empty tag or field")
 	ErrEmptyTagKey       = errors.New("empty tag key")
+	ErrNoAddress         = errors.New("must have at least one address")
 	ErrRetentionPolicy   = errors.New("empty retention policy")
 )
 
