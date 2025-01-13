@@ -17,17 +17,18 @@ package opengemini
 import "errors"
 
 var (
-	ErrAllServersDown    = errors.New("all servers down")
-	ErrEmptyAuthToken    = errors.New("empty auth token")
-	ErrEmptyAuthUsername = errors.New("empty auth username")
-	ErrEmptyAuthPassword = errors.New("empty auth password")
-	ErrEmptyDatabaseName = errors.New("empty database name")
-	ErrEmptyMeasurement  = errors.New("empty measurement")
-	ErrEmptyCommand      = errors.New("empty command")
-	ErrEmptyTagOrField   = errors.New("empty tag or field")
-	ErrEmptyTagKey       = errors.New("empty tag key")
-	ErrNoAddress         = errors.New("must have at least one address")
-	ErrRetentionPolicy   = errors.New("empty retention policy")
+	ErrAllServersDown            = errors.New("all servers down")
+	ErrEmptyAuthToken            = errors.New("empty auth token")
+	ErrEmptyAuthUsername         = errors.New("empty auth username")
+	ErrEmptyAuthPassword         = errors.New("empty auth password")
+	ErrEmptyDatabaseName         = errors.New("empty database name")
+	ErrEmptyMeasurement          = errors.New("empty measurement")
+	ErrEmptyCommand              = errors.New("empty command")
+	ErrEmptyTagOrField           = errors.New("empty tag or field")
+	ErrEmptyTagKey               = errors.New("empty tag key")
+	ErrNoAddress                 = errors.New("must have at least one address")
+	ErrRetentionPolicy           = errors.New("empty retention policy")
+	ErrUnsupportedFieldValueType = errors.New("unsupported field value type")
 )
 
 // checkDatabaseName checks if the database name is empty and returns an error if it is.
