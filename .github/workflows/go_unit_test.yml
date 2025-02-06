@@ -31,6 +31,6 @@ jobs:
         with:
           go-version-file: "go.mod"
       - name: setup OpenGemini
-        uses: shoothzj/setup-opengemini-action@main
+        uses: hezhangjian/setup-opengemini-action@main
       - name: Run coverage
         run: go test ./... -coverpkg=./opengemini/... -race -coverprofile=coverage.out -covermode=atomic
