@@ -26,6 +26,6 @@ jobs:
       - name: skip generated files and dot folders
         run: rm -rf proto/*.pb.go
       - name: licenselint
-        uses: shoothzj/licenselint@main
+        uses: hezhangjian/licenselint@main
         with:
           author: openGemini Authors

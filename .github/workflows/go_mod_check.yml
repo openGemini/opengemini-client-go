@@ -31,6 +31,6 @@ jobs:
         with:
           go-version-file: "go.mod"
       - name: Run Go Mod Check Action
-        uses: shoothzj/go-mod-check-action@main
+        uses: hezhangjian/go-mod-check-action@main
         with:
           prohibitIndirectDepUpdate: 'true'
