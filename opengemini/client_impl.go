@@ -39,6 +39,7 @@ type client struct {
 	prevIdx     atomic.Int32
 	dataChanMap syncx.Map[dbRp, chan *sendBatchWithCB]
 	metrics     *metrics
+	rpcClient   *writerClient
 
 	batchContext       context.Context
 	batchContextCancel context.CancelFunc
@@ -91,6 +92,13 @@ func newClient(c *Config) (Client, error) {
 	} else {
 		dbClient.logger = slog.Default()
 	}
+	if c.GrpcConfig != nil {
+		rc, err := newWriterClient(c.GrpcConfig)
+		if err != nil {
+			return nil, errors.New("failed to create rpc client: " + err.Error())
+		}
+		dbClient.rpcClient = rc
+	}
 	dbClient.prevIdx.Store(-1)
 	if len(c.Addresses) > 1 {
 		// if there are multiple addresses, start the health check
@@ -106,6 +114,9 @@ func (c *client) Close() error {
 		c.dataChanMap.Delete(key)
 		return true
 	})
+	if c.rpcClient != nil {
+		_ = c.rpcClient.Close()
+	}
 	c.cli.CloseIdleConnections()
 	return nil
 }

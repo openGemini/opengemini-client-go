@@ -29,6 +29,7 @@ var (
 	ErrNoAddress                 = errors.New("must have at least one address")
 	ErrRetentionPolicy           = errors.New("empty retention policy")
 	ErrUnsupportedFieldValueType = errors.New("unsupported field value type")
+	ErrEmptyRecord               = errors.New("empty record")
 )
 
 // checkDatabaseName checks if the database name is empty and returns an error if it is.

@@ -22,8 +22,9 @@ import (
 	"net/http"
 	"time"
 
-	compressionPool "github.com/openGemini/opengemini-client-go/lib/pool"
 	"github.com/vmihailenco/msgpack/v5"
+
+	compressionPool "github.com/openGemini/opengemini-client-go/lib/pool"
 )
 
 const (
