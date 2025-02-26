@@ -33,6 +33,7 @@ const (
 type Codec string
 
 type ContentType string
+
 type CompressMethod string
 
 const (
