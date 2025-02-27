@@ -21,6 +21,8 @@ import (
 	"time"
 )
 
+type Precision int
+
 const (
 	PrecisionNanosecond Precision = iota
 	PrecisionMicrosecond
@@ -28,9 +30,8 @@ const (
 	PrecisionSecond
 	PrecisionMinute
 	PrecisionHour
+	PrecisionRFC3339
 )
-
-type Precision int
 
 func (p Precision) String() string {
 	switch p {
@@ -46,6 +47,8 @@ func (p Precision) String() string {
 		return "PrecisionMinute"
 	case PrecisionHour:
 		return "PrecisionHour"
+	case PrecisionRFC3339:
+		return "PrecisionRFC3339"
 	}
 	return ""
 }
@@ -64,8 +67,30 @@ func (p Precision) Epoch() string {
 		return "m"
 	case PrecisionHour:
 		return "h"
+	case PrecisionRFC3339:
+		return "rfc3339"
 	}
 	return ""
+}
+
+func ToPrecision(epoch string) Precision {
+	switch epoch {
+	case "ns":
+		return PrecisionNanosecond
+	case "u":
+		return PrecisionMicrosecond
+	case "ms":
+		return PrecisionMillisecond
+	case "s":
+		return PrecisionSecond
+	case "m":
+		return PrecisionMinute
+	case "h":
+		return PrecisionHour
+	case "rfc3339":
+		return PrecisionRFC3339
+	}
+	return PrecisionNanosecond
 }
 
 // Point represents a single point in the line protocol format.
