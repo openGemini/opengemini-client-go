@@ -84,28 +84,21 @@ func TestServerCheck(t *testing.T) {
 	ctx, cli.batchContextCancel = context.WithCancel(context.Background())
 	go cli.endpointsCheck(ctx)
 
-	url, err := cli.getServerUrl()
-	assert.NoError(t, err)
+	url := cli.getServerUrl()
 	assert.Equal(t, cli.endpoints[0].url, url)
 
-	url, err = cli.getServerUrl()
-	assert.NoError(t, err)
+	url = cli.getServerUrl()
 	assert.Equal(t, cli.endpoints[1].url, url)
 
 	err = server1.Close()
 	assert.NoError(t, err)
 
 	time.Sleep(time.Second * 15)
-	url, err = cli.getServerUrl()
-	assert.NoError(t, err)
+	url = cli.getServerUrl()
 	assert.Equal(t, cli.endpoints[1].url, url)
 
 	err = server2.Close()
 	assert.NoError(t, err)
-
-	time.Sleep(time.Second * 15)
-	_, err = cli.getServerUrl()
-	assert.Equal(t, ErrAllServersDown, err)
 
 	err = cli.Close()
 	assert.NoError(t, err)
