@@ -68,7 +68,6 @@ func TestClientWriteBatchPoints(t *testing.T) {
 	point3.AddTag("Tag", "Test3")
 	point3.AddField("stringField", "test3")
 	point3.AddField("boolField", false)
-	point3.Time = time.Now()
 	bp = append(bp, point3)
 
 	err = c.WriteBatchPoints(context.Background(), database, bp)
@@ -125,7 +124,6 @@ func TestClient_WriteBatchPointsWithRetentionPolicy(t *testing.T) {
 	point3.AddTag("Tag", "Test3")
 	point3.AddField("stringField", "test3")
 	point3.AddField("boolField", false)
-	point3.Time = time.Now()
 	bp = append(bp, point3)
 
 	err = c.WriteBatchPointsWithRp(context.Background(), database, "testRp", bp)
@@ -327,7 +325,6 @@ func TestWriteWithBatchSize(t *testing.T) {
 		point := &Point{}
 		point.Measurement = "test"
 		point.AddField("field", "test")
-		point.Time = time.Now()
 		err := c.WritePoint(database, point, func(err error) {
 			receiver <- struct{}{}
 		})

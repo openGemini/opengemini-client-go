@@ -91,42 +91,9 @@ func TestPointEncode(t *testing.T) {
 		"measurement,tag=tag1 filed1=\"string field\"") != 0 {
 		t.Error("parse point with a tag failed")
 	}
-	point.Time = time.Date(2023, 12, 1, 12, 32, 18, 132363612, time.UTC)
+	point.Timestamp = time.Date(2023, 12, 1, 12, 32, 18, 132363612, time.UTC).UnixNano()
 	if strings.Compare(encodePoint(point),
 		"measurement,tag=tag1 filed1=\"string field\" 1701433938132363612") != 0 {
 		t.Error("parse point with a tag failed")
-	}
-}
-
-func TestFormatTimestamp(t *testing.T) {
-	testTime := time.Date(2023, 12, 1, 12, 32, 18, 132363612, time.UTC)
-	tests := []struct {
-		precision Precision
-		timestamp string
-	}{
-		{
-			precision: PrecisionNanosecond,
-			timestamp: "1701433938132363612",
-		}, {
-			precision: PrecisionMicrosecond,
-			timestamp: "1701433938132364000",
-		}, {
-			precision: PrecisionMillisecond,
-			timestamp: "1701433938132000000",
-		}, {
-			precision: PrecisionSecond,
-			timestamp: "1701433938000000000",
-		}, {
-			precision: PrecisionMinute,
-			timestamp: "1701433920000000000",
-		}, {
-			precision: PrecisionHour,
-			timestamp: "1701435600000000000",
-		},
-	}
-	for _, tt := range tests {
-		if strings.Compare(formatTimestamp(testTime, tt.precision), tt.timestamp) != 0 {
-			t.Errorf("parse timestamp error in %v", tt.precision.String())
-		}
 	}
 }
