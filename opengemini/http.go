@@ -69,18 +69,12 @@ func (c *client) executeHttpPost(urlPath string, details requestDetails) (*http.
 }
 
 func (c *client) executeHttpRequest(method, urlPath string, details requestDetails) (*http.Response, error) {
-	serverUrl, err := c.getServerUrl()
-	if err != nil {
-		return nil, err
-	}
+	serverUrl := c.getServerUrl()
 	return c.executeHttpRequestInner(context.TODO(), method, serverUrl, urlPath, details)
 }
 
 func (c *client) executeHttpRequestWithContext(ctx context.Context, method, urlPath string, details requestDetails) (*http.Response, error) {
-	serverUrl, err := c.getServerUrl()
-	if err != nil {
-		return nil, err
-	}
+	serverUrl := c.getServerUrl()
 	return c.executeHttpRequestInner(ctx, method, serverUrl, urlPath, details)
 }
 

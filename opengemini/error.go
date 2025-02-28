@@ -17,7 +17,6 @@ package opengemini
 import "errors"
 
 var (
-	ErrAllServersDown            = errors.New("all servers down")
 	ErrEmptyAuthToken            = errors.New("empty auth token")
 	ErrEmptyAuthUsername         = errors.New("empty auth username")
 	ErrEmptyAuthPassword         = errors.New("empty auth password")

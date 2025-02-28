@@ -62,14 +62,15 @@ func (c *client) checkUpOrDown(ctx context.Context) {
 }
 
 // getServerUrl if all servers down, return error
-func (c *client) getServerUrl() (string, error) {
+func (c *client) getServerUrl() string {
 	serverLen := len(c.endpoints)
 	for i := serverLen; i > 0; i-- {
 		idx := uint32(c.prevIdx.Add(1)) % uint32(serverLen)
 		if c.endpoints[idx].isDown.Load() {
 			continue
 		}
-		return c.endpoints[idx].url, nil
+		return c.endpoints[idx].url
 	}
-	return "", ErrAllServersDown
+	c.logger.Error("all servers down, no endpoints found")
+	return c.endpoints[random.Intn(serverLen)].url
 }
