@@ -73,6 +73,27 @@ func (p Precision) Epoch() string {
 	return ""
 }
 
+func (p Precision) NowUnix() int64 {
+	switch p {
+	case PrecisionNanosecond:
+		return time.Now().UnixNano()
+	case PrecisionMicrosecond:
+		return time.Now().UnixMicro()
+	case PrecisionMillisecond:
+		return time.Now().UnixMilli()
+	case PrecisionSecond:
+		return time.Now().Unix()
+	case PrecisionMinute:
+		return time.Now().Round(time.Minute).UnixNano()
+	case PrecisionHour:
+		return time.Now().Round(time.Hour).UnixNano()
+	case PrecisionRFC3339:
+		return time.Now().UnixNano()
+	default:
+		return time.Now().UnixNano()
+	}
+}
+
 func ToPrecision(epoch string) Precision {
 	switch epoch {
 	case "ns":
@@ -100,12 +121,8 @@ type Point struct {
 	Measurement string
 	// Precision Timestamp precision, default value is PrecisionNanosecond
 	Precision Precision
-	// Time is the line protocol time field definition.
-	// Deprecated: Use Timestamp instead. Will be removed in 0.10.0.
-	Time time.Time
 	// Timestamp Point creation timestamp, default value is Now() in nanoseconds.
-	// If p.Time is not zero, Timestamp will be set to p.Time.UnixNano() / int64(p.Precision).
-	// If Timestamp is zero, Timestamp will be set to current time.
+	// If Timestamp is zero, Timestamp will not be set to line protocol.
 	Timestamp int64
 	// Tags is the line protocol tag field definition.
 	Tags map[string]string
@@ -272,18 +289,12 @@ func (enc *LineProtocolEncoder) Encode(p *Point) error {
 		}
 	}
 
-	if p.Timestamp != 0 || !p.Time.IsZero() {
+	if p.Timestamp != 0 {
 		if err := enc.writeByte(' '); err != nil {
 			return err
 		}
-		if p.Timestamp != 0 {
-			if _, err := io.WriteString(enc.w, strconv.FormatInt(p.Timestamp, 10)); err != nil {
-				return err
-			}
-		} else if !p.Time.IsZero() {
-			if _, err := io.WriteString(enc.w, formatTimestamp(p.Time, p.Precision)); err != nil {
-				return err
-			}
+		if _, err := io.WriteString(enc.w, strconv.FormatInt(p.Timestamp, 10)); err != nil {
+			return err
 		}
 	}
 
@@ -303,22 +314,4 @@ func (enc *LineProtocolEncoder) BatchEncode(bp []*Point) error {
 		}
 	}
 	return nil
-}
-
-func formatTimestamp(t time.Time, p Precision) string {
-	switch p {
-	case PrecisionNanosecond:
-		return strconv.FormatInt(t.UnixNano(), 10)
-	case PrecisionMicrosecond:
-		return strconv.FormatInt(t.Round(time.Microsecond).UnixNano(), 10)
-	case PrecisionMillisecond:
-		return strconv.FormatInt(t.Round(time.Millisecond).UnixNano(), 10)
-	case PrecisionSecond:
-		return strconv.FormatInt(t.Round(time.Second).UnixNano(), 10)
-	case PrecisionMinute:
-		return strconv.FormatInt(t.Round(time.Minute).UnixNano(), 10)
-	case PrecisionHour:
-		return strconv.FormatInt(t.Round(time.Hour).UnixNano(), 10)
-	}
-	return ""
 }

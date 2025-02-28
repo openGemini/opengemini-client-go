@@ -79,7 +79,7 @@ func main() {
 		p.AddTag("Weather", tagList[rand.Int31n(3)])
 		p.AddField("Humidity", rand.Int31n(100))
 		p.AddField("Temperature", rand.Int31n(40))
-		p.Time = time.Now()
+		p.Timestamp = time.Now().UnixNano()
 		pointList = append(pointList, p)
 		time.Sleep(time.Nanosecond)
 	}

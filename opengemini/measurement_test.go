@@ -63,7 +63,7 @@ func TestClientDropMeasurementExistSpecifyRp(t *testing.T) {
 		{
 			Measurement: measurement,
 			Precision:   0,
-			Time:        time.Time{},
+			Timestamp:   0,
 			Tags:        nil,
 			Fields: map[string]interface{}{
 				"value": 1,
@@ -128,7 +128,7 @@ func TestClientDropMeasurementEmptyRetentionPolicy(t *testing.T) {
 		{
 			Measurement: measurement,
 			Precision:   0,
-			Time:        time.Time{},
+			Timestamp:   0,
 			Tags:        nil,
 			Fields: map[string]interface{}{
 				"string": 1,

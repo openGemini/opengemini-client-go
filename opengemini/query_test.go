@@ -40,7 +40,6 @@ func TestQueryWithEpoch(t *testing.T) {
 	p := &Point{}
 	p.Measurement = testMeasurement
 	p.AddField("TestField", 123)
-	p.Time = time.Now()
 
 	err = c.WritePoint(database, p, func(err error) {
 		assert.Nil(t, err)
@@ -95,7 +94,6 @@ func TestQueryWithMsgPack(t *testing.T) {
 	p := &Point{}
 	p.Measurement = testMeasurement
 	p.AddField("TestField", 123)
-	p.Time = time.Now()
 
 	err = c.WritePoint(database, p, func(err error) {
 		assert.Nil(t, err)
@@ -153,7 +151,6 @@ func TestQueryWithZSTD(t *testing.T) {
 	p := &Point{}
 	p.Measurement = testMeasurement
 	p.AddField("TestField", 123)
-	p.Time = time.Now()
 
 	err = c.WritePoint(database, p, func(err error) {
 		assert.Nil(t, err)
@@ -211,7 +208,6 @@ func TestQueryWithSnappy(t *testing.T) {
 	p := &Point{}
 	p.Measurement = testMeasurement
 	p.AddField("TestField", 123)
-	p.Time = time.Now()
 
 	err = c.WritePoint(database, p, func(err error) {
 		assert.Nil(t, err)
@@ -270,7 +266,6 @@ func TestQueryWithZSTDAndMsgPack(t *testing.T) {
 	p := &Point{}
 	p.Measurement = testMeasurement
 	p.AddField("TestField", 123)
-	p.Time = time.Now()
 
 	err = c.WritePoint(database, p, func(err error) {
 		assert.Nil(t, err)
