@@ -40,7 +40,7 @@ Create a Client:
 
 ```go
 config := &opengemini.Config{
-	Addresses: []*opengemini.Address{
+	Addresses: []opengemini.Address{
 		{
 			Host: "127.0.0.1",
 			Port: 8086,
