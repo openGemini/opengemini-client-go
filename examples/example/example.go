@@ -67,6 +67,7 @@ func main() {
 	})
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	// use write batch points method
@@ -86,6 +87,7 @@ func main() {
 	err = client.WriteBatchPoints(context.Background(), exampleDatabase, pointList)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	time.Sleep(time.Second * 5)
@@ -98,6 +100,7 @@ func main() {
 	res, err := client.Query(q)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	for _, r := range res.Results {
 		for _, s := range r.Series {

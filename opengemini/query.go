@@ -40,6 +40,11 @@ type Query struct {
 	Command         string
 	RetentionPolicy string
 	Precision       Precision
+	// Params is a server-side supported behavior that allows clients to query SQL using variable methods instead of
+	// values in the where condition, a simple example is a measurement structure with
+	// `weather,location=us-midwest temperature=82`, the client can use `select * from mst where v1=$var` to query data,
+	// and specify params as `var:82`. For more cases, please refer to `ExampleQuery`
+	Params map[string]any
 }
 
 // Query sends a command to the server
@@ -48,12 +53,26 @@ func (c *client) Query(q Query) (*QueryResult, error) {
 		return nil, err
 	}
 
+	var err error
 	req := buildRequestDetails(c.config, func(req *requestDetails) {
 		req.queryValues.Add("db", q.Database)
 		req.queryValues.Add("q", q.Command)
 		req.queryValues.Add("rp", q.RetentionPolicy)
 		req.queryValues.Add("epoch", q.Precision.Epoch())
+		if len(q.Params) != 0 {
+			var params []byte
+			params, err = json.Marshal(q.Params)
+			if err != nil {
+				err = fmt.Errorf("marshal query bound parameter failed: %w", err)
+				return
+			}
+			req.queryValues.Add("params", string(params))
+		}
 	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	// metric
 	c.metrics.queryCounter.Add(1)

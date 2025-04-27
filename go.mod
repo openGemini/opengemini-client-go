@@ -3,8 +3,8 @@ module github.com/openGemini/opengemini-client-go
 go 1.22
 
 require (
-	github.com/golang/snappy v0.0.4
-	github.com/klauspost/compress v1.17.11
+	github.com/golang/snappy v1.0.0
+	github.com/klauspost/compress v1.18.0
 	github.com/libgox/gocollections v0.1.1
 	github.com/libgox/unicodex v0.1.0
 	github.com/prometheus/client_golang v1.20.5
