@@ -61,7 +61,7 @@ func (c *client) CreateDatabaseWithRp(database string, rpConfig RpConfig) error 
 
 	err = queryResult.hasError()
 	if err != nil {
-		return fmt.Errorf("create database with rentention policy err: %w", err)
+		return fmt.Errorf("create database with retention policy err: %w", err)
 	}
 
 	return nil
