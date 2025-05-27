@@ -67,6 +67,10 @@ type Client interface {
 	WriteBatchPoints(ctx context.Context, database string, bp []*Point) error
 	// WriteBatchPointsWithRp write batch points with retention policy
 	WriteBatchPointsWithRp(ctx context.Context, database string, rp string, bp []*Point) error
+	// WriteLineProtocol write line protocol to assigned database.
+	WriteLineProtocol(ctx context.Context, database string, lineProtocol string) error
+	// WriteLineProtocolWithRp write line protocol to assigned database.retention_policy.
+	WriteLineProtocolWithRp(ctx context.Context, database string, rp string, lineProtocol string) error
 	// WriteByGrpc write batch record to assigned database.retention_policy by gRPC.
 	// You'd better use NewWriteRequestBuilder to build req.
 	WriteByGrpc(ctx context.Context, req *proto.WriteRequest) error
