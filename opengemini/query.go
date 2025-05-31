@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/golang/snappy"
 	"github.com/vmihailenco/msgpack/v5"
 
 	compressionPool "github.com/openGemini/opengemini-client-go/lib/pool"
@@ -222,12 +223,7 @@ func decodeZstdBody(compressedBody []byte) ([]byte, error) {
 }
 
 func decodeSnappyBody(compressedBody []byte) ([]byte, error) {
-	reader, err := compressionPool.GetSnappyReader(compressedBody)
-	if err != nil {
-		return nil, errors.New("failed to create snappy reader: " + err.Error())
-	}
-	defer compressionPool.PutSnappyReader(reader)
-	decompressedBody, err := io.ReadAll(reader)
+	decompressedBody, err := snappy.Decode(nil, compressedBody)
 	if err != nil {
 		return nil, errors.New("failed to decompress snappy body: " + err.Error())
 	}

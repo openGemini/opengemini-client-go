@@ -18,9 +18,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/openGemini/opengemini-client-go/opengemini"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/openGemini/opengemini-client-go/opengemini"
 )
 
 func main() {
