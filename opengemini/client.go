@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/tls"
 	"log/slog"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -50,6 +51,13 @@ const (
 	CompressMethodSnappy CompressMethod = "SNAPPY"
 	CompressMethodNone   CompressMethod = "NONE"
 )
+
+type Interceptor interface {
+	QueryBefore(ctx context.Context, query *OtelQuery)
+	QueryAfter(ctx context.Context, query *OtelQuery, response *http.Response)
+	WriteBefore(ctx context.Context, write *OtelWrite)
+	WriteAfter(ctx context.Context, write *OtelWrite, response *http.Response)
+}
 
 // Client represents a openGemini client.
 type Client interface {
@@ -135,6 +143,8 @@ type Client interface {
 
 	// ExposeMetrics expose prometheus metrics, calling prometheus.MustRegister(metrics) to register
 	ExposeMetrics() prometheus.Collector
+	// Interceptors inject interceptor
+	Interceptors(...Interceptor)
 }
 
 // Config is used to construct a openGemini Client instance.

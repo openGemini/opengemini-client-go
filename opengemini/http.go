@@ -29,6 +29,36 @@ type requestDetails struct {
 	body        io.Reader
 }
 
+func (req *requestDetails) toQuery() *OtelQuery {
+	if req.queryValues == nil {
+		return &OtelQuery{}
+	}
+	return &OtelQuery{
+		Query: &Query{
+			Database:        req.queryValues.Get("db"),
+			Command:         req.queryValues.Get("q"),
+			RetentionPolicy: req.queryValues.Get("rp"),
+			Precision:       ToPrecision(req.queryValues.Get("epoch")),
+		},
+	}
+}
+
+func (req *requestDetails) toWrite() *OtelWrite {
+	if req.queryValues == nil {
+		return &OtelWrite{}
+	}
+	body, err := io.ReadAll(req.body)
+	if err != nil {
+		return &OtelWrite{}
+	}
+	return &OtelWrite{
+		Database:        req.queryValues.Get("db"),
+		RetentionPolicy: req.queryValues.Get("rp"),
+		LineProtocol:    string(body),
+		Precision:       req.queryValues.Get("epoch"),
+	}
+}
+
 func (c *client) updateAuthHeader(method, urlPath string, header http.Header) http.Header {
 	if c.config.AuthConfig == nil {
 		return header
@@ -122,5 +152,33 @@ func (c *client) executeHttpRequestInner(ctx context.Context, method, serverUrl,
 		}
 	}
 
-	return c.cli.Do(request)
+	var otelData []any
+	for _, interceptor := range c.interceptors {
+		switch urlPath {
+		case UrlWrite:
+			var data = details.toWrite()
+			interceptor.WriteBefore(ctx, data)
+			otelData = append(otelData, data)
+		default:
+			var data = details.toQuery()
+			interceptor.QueryBefore(ctx, data)
+			otelData = append(otelData, data)
+		}
+	}
+
+	response, err := c.cli.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, interceptor := range c.interceptors {
+		switch urlPath {
+		case UrlWrite:
+			interceptor.WriteAfter(ctx, otelData[i].(*OtelWrite), response)
+		default:
+			interceptor.QueryAfter(ctx, otelData[i].(*OtelQuery), response)
+		}
+	}
+
+	return response, nil
 }
