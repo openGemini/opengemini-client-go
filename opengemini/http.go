@@ -29,6 +29,18 @@ type requestDetails struct {
 	body        io.Reader
 }
 
+func (req *requestDetails) toQuery() *Query {
+	if req.queryValues == nil {
+		return &Query{}
+	}
+	return &Query{
+		Database:        req.queryValues.Get("db"),
+		Command:         req.queryValues.Get("q"),
+		RetentionPolicy: req.queryValues.Get("rp"),
+		Precision:       ToPrecision(req.queryValues.Get("epoch")),
+	}
+}
+
 func (c *client) updateAuthHeader(method, urlPath string, header http.Header) http.Header {
 	if c.config.AuthConfig == nil {
 		return header
@@ -122,5 +134,24 @@ func (c *client) executeHttpRequestInner(ctx context.Context, method, serverUrl,
 		}
 	}
 
-	return c.cli.Do(request)
+	var ctxs []context.Context
+	if urlPath != UrlWrite {
+		for _, interceptor := range c.interceptors {
+			beforeCtx := interceptor.QueryBefore(ctx, details.toQuery())
+			ctxs = append(ctxs, beforeCtx)
+		}
+	}
+
+	response, err := c.cli.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if urlPath != UrlWrite {
+		for i, interceptor := range c.interceptors {
+			interceptor.QueryAfter(ctxs[i], response)
+		}
+	}
+
+	return response, nil
 }

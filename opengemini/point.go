@@ -15,6 +15,7 @@
 package opengemini
 
 import (
+	"bytes"
 	"io"
 	"strconv"
 	"strings"
@@ -127,7 +128,28 @@ type Point struct {
 	// Tags is the line protocol tag field definition.
 	Tags map[string]string
 	// Fields is the line protocol value field definition.
-	Fields map[string]interface{}
+	Fields  map[string]interface{}
+	Name    string
+	Time    time.Time
+	Command string
+}
+
+func (p *Point) toLineProtocol() string {
+	var buffer = &bytes.Buffer{}
+	enc := NewLineProtocolEncoder(buffer)
+	if err := enc.Encode(p); err != nil {
+		return ""
+	}
+	return buffer.String()
+}
+
+type OtelPoint struct {
+	*Point
+	Database        string
+	RetentionPolicy string
+	Precision       string
+	Measurement     string
+	BatchCount      int
 }
 
 func (p *Point) AddTag(key string, value string) {
