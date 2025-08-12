@@ -29,15 +29,33 @@ type requestDetails struct {
 	body        io.Reader
 }
 
-func (req *requestDetails) toQuery() *Query {
+func (req *requestDetails) toQuery() *OtelQuery {
 	if req.queryValues == nil {
-		return &Query{}
+		return &OtelQuery{}
 	}
-	return &Query{
+	return &OtelQuery{
+		Query: &Query{
+			Database:        req.queryValues.Get("db"),
+			Command:         req.queryValues.Get("q"),
+			RetentionPolicy: req.queryValues.Get("rp"),
+			Precision:       ToPrecision(req.queryValues.Get("epoch")),
+		},
+	}
+}
+
+func (req *requestDetails) toWrite() *OtelWrite {
+	if req.queryValues == nil {
+		return &OtelWrite{}
+	}
+	body, err := io.ReadAll(req.body)
+	if err != nil {
+		return &OtelWrite{}
+	}
+	return &OtelWrite{
 		Database:        req.queryValues.Get("db"),
-		Command:         req.queryValues.Get("q"),
 		RetentionPolicy: req.queryValues.Get("rp"),
-		Precision:       ToPrecision(req.queryValues.Get("epoch")),
+		LineProtocol:    string(body),
+		Precision:       req.queryValues.Get("epoch"),
 	}
 }
 
@@ -134,11 +152,17 @@ func (c *client) executeHttpRequestInner(ctx context.Context, method, serverUrl,
 		}
 	}
 
-	var ctxs []context.Context
-	if urlPath != UrlWrite {
-		for _, interceptor := range c.interceptors {
-			beforeCtx := interceptor.QueryBefore(ctx, details.toQuery())
-			ctxs = append(ctxs, beforeCtx)
+	var otelData []any
+	for _, interceptor := range c.interceptors {
+		switch urlPath {
+		case UrlWrite:
+			var data = details.toWrite()
+			interceptor.WriteBefore(ctx, data)
+			otelData = append(otelData, data)
+		default:
+			var data = details.toQuery()
+			interceptor.QueryBefore(ctx, data)
+			otelData = append(otelData, data)
 		}
 	}
 
@@ -147,9 +171,12 @@ func (c *client) executeHttpRequestInner(ctx context.Context, method, serverUrl,
 		return nil, err
 	}
 
-	if urlPath != UrlWrite {
-		for i, interceptor := range c.interceptors {
-			interceptor.QueryAfter(ctxs[i], response)
+	for i, interceptor := range c.interceptors {
+		switch urlPath {
+		case UrlWrite:
+			interceptor.WriteAfter(ctx, otelData[i].(*OtelWrite), response)
+		default:
+			interceptor.QueryAfter(ctx, otelData[i].(*OtelQuery), response)
 		}
 	}
 

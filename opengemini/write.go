@@ -79,12 +79,12 @@ func (c *client) WritePointWithRp(database string, rp string, point *Point, call
 		return nil
 	}
 
-	buffer, err := c.encodePoint(c.batchContext, database, rp, point)
+	buffer, err := c.encodePoint(point)
 	if err != nil {
 		return err
 	}
 
-	return c.writeBytesBuffer(c.batchContext, database, rp, buffer, len([]*Point{point}))
+	return c.writeBytesBuffer(c.batchContext, database, rp, buffer)
 }
 
 func (c *client) WriteBatchPointsWithRp(ctx context.Context, database string, rp string, bp []*Point) error {
@@ -92,15 +92,15 @@ func (c *client) WriteBatchPointsWithRp(ctx context.Context, database string, rp
 		return nil
 	}
 
-	buffer, err := c.encodeBatchPoints(ctx, database, rp, bp)
+	buffer, err := c.encodeBatchPoints(bp)
 	if err != nil {
 		return err
 	}
 
-	return c.writeBytesBuffer(ctx, database, rp, buffer, len(bp))
+	return c.writeBytesBuffer(ctx, database, rp, buffer)
 }
 
-func (c *client) encodePoint(ctx context.Context, database, retentionPolicy string, point *Point) (*bytes.Buffer, error) {
+func (c *client) encodePoint(point *Point) (*bytes.Buffer, error) {
 	var buffer bytes.Buffer
 	writer := c.newWriter(&buffer)
 
@@ -112,63 +112,31 @@ func (c *client) encodePoint(ctx context.Context, database, retentionPolicy stri
 	return &buffer, nil
 }
 
-func (c *client) encodeBatchPoints(ctx context.Context, database, retentionPolicy string, bp []*Point) (*bytes.Buffer, error) {
+func (c *client) encodeBatchPoints(bp []*Point) (*bytes.Buffer, error) {
 	var buffer bytes.Buffer
 	writer := c.newWriter(&buffer)
-	enc := NewLineProtocolEncoder(writer)
 
+	enc := NewLineProtocolEncoder(writer)
 	if err := enc.BatchEncode(bp); err != nil {
-		return nil, errors.New("batchEncode failed: " + err.Error())
+		return nil, errors.New("batchEncode failed, error: " + err.Error())
 	}
+
 	return &buffer, nil
 }
 
-func (c *client) writeBytesBuffer(ctx context.Context, database string, rp string, buffer *bytes.Buffer, pointCount int) error {
-	parentCtx := ctx
-	for _, interceptor := range c.interceptors {
-		parentCtx = interceptor.WriteBefore(parentCtx, &OtelPoint{
-			Database:        database,
-			RetentionPolicy: rp,
-			Measurement:     "batch_write",
-			BatchCount:      pointCount,
-		})
-	}
-
-	idx := c.prevIdx.Load()
-	if idx >= int32(len(c.endpoints)) {
-		return errors.New("no valid endpoint")
-	}
-	baseURL := c.endpoints[idx].url
-
-	writeURL := fmt.Sprintf("%s/write?db=%s", baseURL, url.QueryEscape(database))
-	if rp != "" {
-		writeURL += fmt.Sprintf("&rp=%s", url.QueryEscape(rp))
-	}
-
-	req, err := http.NewRequestWithContext(parentCtx, "POST", writeURL, buffer)
+func (c *client) writeBytesBuffer(ctx context.Context, database string, rp string, buffer *bytes.Buffer) error {
+	resp, err := c.innerWrite(ctx, database, rp, buffer)
 	if err != nil {
-		for _, interceptor := range c.interceptors {
-			interceptor.WriteAfter(parentCtx, nil)
+		return errors.New("innerWrite request failed, error: " + err.Error())
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusNoContent {
+		errorBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return errors.New("writeBatchPoint read resp body failed, error: " + err.Error())
 		}
-		return fmt.Errorf("create request failed: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/octet-stream")
-
-	response, err := c.cli.Do(req)
-
-	for _, interceptor := range c.interceptors {
-		interceptor.WriteAfter(parentCtx, response)
-	}
-
-	if err != nil {
-		return fmt.Errorf("HTTP request failed: %w", err)
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode >= 300 {
-		body, _ := io.ReadAll(response.Body)
-		return fmt.Errorf("write failed, status: %d, body: %s", response.StatusCode, string(body))
+		return errors.New("writeBatchPoint error resp, code: " + resp.Status + "body: " + string(errorBody))
 	}
 	return nil
 }

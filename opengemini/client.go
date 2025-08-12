@@ -53,10 +53,10 @@ const (
 )
 
 type Interceptor interface {
-	QueryBefore(ctx context.Context, query *Query) context.Context
-	QueryAfter(ctx context.Context, response *http.Response)
-	WriteBefore(ctx context.Context, point *OtelPoint) context.Context
-	WriteAfter(ctx context.Context, response *http.Response)
+	QueryBefore(ctx context.Context, query *OtelQuery)
+	QueryAfter(ctx context.Context, query *OtelQuery, response *http.Response)
+	WriteBefore(ctx context.Context, write *OtelWrite)
+	WriteAfter(ctx context.Context, write *OtelWrite, response *http.Response)
 }
 
 // Client represents a openGemini client.
