@@ -143,6 +143,7 @@ func newHttpClient(config Config) *http.Client {
 			MaxConnsPerHost:     config.MaxConnsPerHost,
 			MaxIdleConnsPerHost: config.MaxIdleConnsPerHost,
 			TLSClientConfig:     config.TlsConfig,
+			DisableCompression:  true,
 		},
 	}
 }
