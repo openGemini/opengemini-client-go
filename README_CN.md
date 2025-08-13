@@ -1,6 +1,7 @@
 # opengemini-client-go
 
 ![License](https://img.shields.io/badge/开源许可证-Apache2.0-green)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11013/badge)](https://www.bestpractices.dev/projects/11013)
 ![Language](https://img.shields.io/badge/语言-Go-blue.svg)
 [![version](https://img.shields.io/github/v/tag/opengemini/opengemini-client-go?label=发行版本&color=blue)](https://github.com/opengemini/opengemini-client-go/releases)
 [![Go report](https://goreportcard.com/badge/github.com/opengemini/opengemini-client-go)](https://goreportcard.com/report/github.com/opengemini/opengemini-client-go)
