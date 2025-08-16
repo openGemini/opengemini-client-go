@@ -15,7 +15,6 @@
 package opengemini
 
 import (
-	"bytes"
 	"io"
 	"strconv"
 	"strings"
@@ -132,15 +131,6 @@ type Point struct {
 	Name    string
 	Time    time.Time
 	Command string
-}
-
-func (p *Point) toLineProtocol() string {
-	var buffer = &bytes.Buffer{}
-	enc := NewLineProtocolEncoder(buffer)
-	if err := enc.Encode(p); err != nil {
-		return ""
-	}
-	return buffer.String()
 }
 
 type OtelPoint struct {

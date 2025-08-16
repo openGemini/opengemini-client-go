@@ -17,19 +17,13 @@ package opengemini
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -50,74 +44,6 @@ const (
 var (
 	tracer = otel.Tracer(TraceName)
 )
-
-// setupOTelSDK bootstraps the OpenTelemetry pipeline.
-// If it does not return an error, make sure to call shutdown for proper cleanup.
-func setupOTelSDK(ctx context.Context) (shutdown func(context.Context) error, err error) {
-	var shutdownFuncs []func(context.Context) error
-
-	// shutdown calls cleanup functions registered via shutdownFuncs.
-	// The errors from the calls are joined.
-	// Each registered cleanup will be invoked once.
-	shutdown = func(ctx context.Context) error {
-		var err error
-		for _, fn := range shutdownFuncs {
-			err = errors.Join(err, fn(ctx))
-		}
-		shutdownFuncs = nil
-		return err
-	}
-
-	// handleErr calls shutdown for cleanup and makes sure that all errors are returned.
-	handleErr := func(inErr error) {
-		err = errors.Join(inErr, shutdown(ctx))
-	}
-
-	// Set up propagator.
-	prop := newPropagator()
-	otel.SetTextMapPropagator(prop)
-
-	// Set up trace provider.
-	tracerProvider, err := newTracerProvider()
-	if err != nil {
-		handleErr(err)
-		return
-	}
-	shutdownFuncs = append(shutdownFuncs, tracerProvider.Shutdown)
-	otel.SetTracerProvider(tracerProvider)
-
-	return
-}
-
-func newPropagator() propagation.TextMapPropagator {
-	return propagation.NewCompositeTextMapPropagator(
-		propagation.TraceContext{},
-		propagation.Baggage{},
-	)
-}
-
-func newTracerProvider() (*sdktrace.TracerProvider, error) {
-	//traceExporter, err := stdouttrace.New(
-	//	stdouttrace.WithPrettyPrint())
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	traceExporter, err := otlptracehttp.New(context.Background(),
-		otlptracehttp.WithEndpoint("127.0.0.1:4318"),
-		otlptracehttp.WithInsecure())
-	if err != nil {
-		return nil, err
-	}
-
-	tracerProvider := sdktrace.NewTracerProvider(
-		sdktrace.WithResource(resource.NewWithAttributes("", semconv.ServiceName("opengemini-client-go"))),
-		sdktrace.WithBatcher(traceExporter,
-			// Default is 5s. Set to 1s for demonstrative purposes.
-			sdktrace.WithBatchTimeout(time.Second)),
-	)
-	return tracerProvider, nil
-}
 
 type OtelQuery struct {
 	*Query
@@ -144,20 +70,17 @@ func NewOtelInterceptor() Interceptor {
 	return &OtelClient{}
 }
 
-func getSpanFromCarrier(ctx context.Context, carrier propagation.TextMapCarrier) (context.Context, trace.Span) {
-	propagator := otel.GetTextMapPropagator()
-	ctx = propagator.Extract(ctx, carrier)
-	span := trace.SpanFromContext(ctx)
-	return ctx, span
-}
-
 func (o *OtelClient) QueryBefore(ctx context.Context, query *OtelQuery) {
+	ctx = otel.GetTextMapPropagator().Extract(ctx, query.Carrier)
 	var span trace.Span
-	if query.Carrier != nil {
-		ctx, span = getSpanFromCarrier(ctx, query.Carrier)
+
+	if query.Span != nil {
+		span = query.Span
 	} else {
 		ctx, span = tracer.Start(ctx, SpanNameQuery)
 	}
+
+	otel.GetTextMapPropagator().Inject(ctx, query.Carrier)
 
 	span.SetAttributes(attribute.String(AttributeDatabase, query.Database))
 	span.SetAttributes(attribute.String(AttributeRetentionPolicy, query.RetentionPolicy))
@@ -179,48 +102,59 @@ func (o *OtelClient) QueryAfter(ctx context.Context, query *OtelQuery, response 
 	var span trace.Span
 	if query.Span != nil {
 		span = query.Span
-	} else if query.Carrier != nil {
-		ctx, span = getSpanFromCarrier(ctx, query.Carrier)
+	} else {
+		ctx = otel.GetTextMapPropagator().Extract(ctx, query.Carrier)
+		_, span = tracer.Start(ctx, SpanNameQuery)
 	}
 
 	defer span.End()
 
-	body, err := io.ReadAll(response.Body)
+	var buf bytes.Buffer
+	tee := io.TeeReader(response.Body, &buf)
+	data, err := io.ReadAll(tee)
 	if err != nil {
-		fmt.Println("read query body failed:", err)
-		return
+		fmt.Println("otel interceptor read query response body failed", err)
 	}
-
-	response.Body = io.NopCloser(bytes.NewBuffer(body))
+	response.Body = io.NopCloser(&buf)
 
 	span.SetAttributes(attribute.Int(AttributeResponseStatusCode, response.StatusCode))
-	span.SetAttributes(attribute.String(AttributeResponseBody, string(body)))
+	span.SetAttributes(attribute.String(AttributeResponseBody, string(data)))
 }
 
 func (o *OtelClient) WriteBefore(ctx context.Context, write *OtelWrite) {
+	ctx = otel.GetTextMapPropagator().Extract(ctx, write.Carrier)
 	var span trace.Span
-	if write.Carrier != nil {
-		ctx, span = getSpanFromCarrier(ctx, write.Carrier)
+
+	if write.Span != nil {
+		span = write.Span
 	} else {
 		ctx, span = tracer.Start(ctx, SpanNameWrite)
 	}
 
+	otel.GetTextMapPropagator().Inject(ctx, write.Carrier)
+
 	span.SetAttributes(attribute.String(AttributeDatabase, write.Database))
 	span.SetAttributes(attribute.String(AttributeRetentionPolicy, write.RetentionPolicy))
-	//span.SetAttributes(attribute.String(AttributeMeasurement, write.Measurement))
 	span.SetAttributes(attribute.String(AttributePrecision, write.Precision))
 	span.SetAttributes(attribute.String(AttributeWriteLineProtocol, write.LineProtocol))
-	//span.SetAttributes(attribute.String("write.type", "batch"))
 	write.Ctx = ctx
 	write.Span = span
 }
 
 func (o *OtelClient) WriteAfter(ctx context.Context, write *OtelWrite, response *http.Response) {
+	if response == nil {
+		if write.Span != nil {
+			write.Span.End()
+		}
+		return
+	}
+
 	var span trace.Span
 	if write.Span != nil {
 		span = write.Span
-	} else if write.Carrier != nil {
-		ctx, span = getSpanFromCarrier(ctx, write.Carrier)
+	} else {
+		ctx = otel.GetTextMapPropagator().Extract(ctx, write.Carrier)
+		_, span = tracer.Start(ctx, SpanNameWrite)
 	}
 
 	defer span.End()

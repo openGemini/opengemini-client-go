@@ -15,8 +15,6 @@
 package opengemini
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -28,19 +26,12 @@ import (
 func TestOtelClient_WriteInterceptors(t *testing.T) {
 	c := testDefaultClient(t)
 
-	otelShutdown, err := setupOTelSDK(context.Background())
-	if err != nil {
-		return
-	}
-	//Handle shutdown properly so nothing leaks.
-	defer func() {
-		err = errors.Join(err, otelShutdown(context.Background()))
-	}()
 	//Register the OtelCClient interceptor
 	c.Interceptors(NewOtelInterceptor())
 
 	databaseName := randomDatabaseName()
-	err = c.CreateDatabase(databaseName)
+	err := c.CreateDatabase(databaseName)
+	assert.NoError(t, err)
 	time.Sleep(time.Second * 3)
 	point := &Point{
 		Measurement: "test_write",
@@ -59,19 +50,12 @@ func TestOtelClient_WriteInterceptors(t *testing.T) {
 
 func TestOtelClient_ShowTagKeys(t *testing.T) {
 	c := testDefaultClient(t)
-	otelShutdown, err := setupOTelSDK(context.Background())
-	if err != nil {
-		return
-	}
-	//Handle shutdown properly so nothing leaks.
-	defer func() {
-		err = errors.Join(err, otelShutdown(context.Background()))
-	}()
 	//Register the OtelCClient interceptor
 	c.Interceptors(NewOtelInterceptor())
 
 	databaseName := randomDatabaseName()
-	err = c.CreateDatabase(databaseName)
+	err := c.CreateDatabase(databaseName)
+	assert.NoError(t, err)
 	point := &Point{
 		Measurement: "test_write",
 		Precision:   PrecisionNanosecond,
@@ -98,37 +82,18 @@ func TestOtelClient_ShowTagKeys(t *testing.T) {
 	require.Nil(t, err)
 }
 
-func cleanup(t *testing.T, otelShutdown func(context.Context) error, databaseName string) {
-	defer func() {
-		c := testDefaultClient(t)
-		err := c.DropDatabase(databaseName)
-		require.Nil(t, err)
-		err = errors.Join(err, otelShutdown(context.Background()))
-		assert.Nil(t, err)
-	}()
-}
-
 func TestOtelShowDatabase(t *testing.T) {
 	c := testDefaultClient(t)
-	otelShutdown, err := setupOTelSDK(context.Background())
-	if err != nil {
-		return
-	}
-	//Handle shutdown properly so nothing leaks.
-	defer func() {
-		err = errors.Join(err, otelShutdown(context.Background()))
-	}()
 	//Register the OtelCClient interceptor
 	c.Interceptors(NewOtelInterceptor())
 
 	databaseName := randomDatabaseName()
-	err = c.CreateDatabase(databaseName)
+	err := c.CreateDatabase(databaseName)
 	if err != nil {
 		t.Logf("Error creating database %q: %v", databaseName, err)
 		return
 	}
 	require.Nil(t, err)
-	defer cleanup(t, otelShutdown, databaseName)
 
 	result, err := c.ShowDatabases()
 	require.Nil(t, err)
@@ -137,21 +102,12 @@ func TestOtelShowDatabase(t *testing.T) {
 
 func TestOtelWritePoint(t *testing.T) {
 	c := testDefaultClient(t)
-	otelShutdown, err := setupOTelSDK(context.Background())
-	if err != nil {
-		return
-	}
-	//Handle shutdown properly so nothing leaks.
-	defer func() {
-		err = errors.Join(err, otelShutdown(context.Background()))
-	}()
 	//Register the OtelCClient interceptor
 	c.Interceptors(NewOtelInterceptor())
 
 	databaseName := randomDatabaseName()
-	err = c.CreateDatabase(databaseName)
+	err := c.CreateDatabase(databaseName)
 	assert.Nil(t, err, "failure:%v", err)
-	defer cleanup(t, otelShutdown, databaseName)
 
 	point := &Point{
 		Measurement: "test_write",
@@ -171,20 +127,11 @@ func TestOtelWritePoint(t *testing.T) {
 
 func TestOtelCreateAndQueryMeasurement(t *testing.T) {
 	c := testDefaultClient(t)
-	otelShutdown, err := setupOTelSDK(context.Background())
-	if err != nil {
-		return
-	}
-	//Handle shutdown properly so nothing leaks.
-	defer func() {
-		err = errors.Join(err, otelShutdown(context.Background()))
-	}()
 	//Register the OtelCClient interceptor
 	c.Interceptors(NewOtelInterceptor())
 	databaseName := randomDatabaseName()
-	err = c.CreateDatabase(databaseName)
+	err := c.CreateDatabase(databaseName)
 	require.Nil(t, err)
-	defer cleanup(t, otelShutdown, databaseName)
 
 	measurement := randomMeasurement()
 
