@@ -29,11 +29,11 @@ type requestDetails struct {
 	body        io.Reader
 }
 
-func (req *requestDetails) toQuery() *OtelQuery {
+func (req *requestDetails) toQuery() *InterceptorQuery {
 	if req.queryValues == nil {
-		return &OtelQuery{}
+		return &InterceptorQuery{}
 	}
-	return &OtelQuery{
+	return &InterceptorQuery{
 		Query: &Query{
 			Database:        req.queryValues.Get("db"),
 			Command:         req.queryValues.Get("q"),
@@ -43,15 +43,15 @@ func (req *requestDetails) toQuery() *OtelQuery {
 	}
 }
 
-func (req *requestDetails) toWrite() *OtelWrite {
+func (req *requestDetails) toWrite() *InterceptorWrite {
 	if req.queryValues == nil {
-		return &OtelWrite{}
+		return &InterceptorWrite{}
 	}
 	body, err := io.ReadAll(req.body)
 	if err != nil {
-		return &OtelWrite{}
+		return &InterceptorWrite{}
 	}
-	return &OtelWrite{
+	return &InterceptorWrite{
 		Database:        req.queryValues.Get("db"),
 		RetentionPolicy: req.queryValues.Get("rp"),
 		LineProtocol:    string(body),
@@ -152,18 +152,18 @@ func (c *client) executeHttpRequestInner(ctx context.Context, method, serverUrl,
 		}
 	}
 
-	var otelData []any
+	var closures []InterceptorClosure
 	for _, interceptor := range c.interceptors {
+		var closure InterceptorClosure
 		switch urlPath {
 		case UrlWrite:
 			var data = details.toWrite()
-			interceptor.WriteBefore(ctx, data)
-			otelData = append(otelData, data)
+			closure = interceptor.Write(ctx, data)
 		default:
 			var data = details.toQuery()
-			interceptor.QueryBefore(ctx, data)
-			otelData = append(otelData, data)
+			closure = interceptor.Query(ctx, data)
 		}
+		closures = append(closures, closure)
 	}
 
 	response, err := c.cli.Do(request)
@@ -171,12 +171,9 @@ func (c *client) executeHttpRequestInner(ctx context.Context, method, serverUrl,
 		return nil, err
 	}
 
-	for i, interceptor := range c.interceptors {
-		switch urlPath {
-		case UrlWrite:
-			interceptor.WriteAfter(ctx, otelData[i].(*OtelWrite), response)
-		default:
-			interceptor.QueryAfter(ctx, otelData[i].(*OtelQuery), response)
+	for _, fn := range closures {
+		if err := fn(ctx, response); err != nil {
+			return nil, err
 		}
 	}
 

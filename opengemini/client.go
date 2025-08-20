@@ -52,11 +52,11 @@ const (
 	CompressMethodNone   CompressMethod = "NONE"
 )
 
+type InterceptorClosure func(ctx context.Context, response *http.Response) error
+
 type Interceptor interface {
-	QueryBefore(ctx context.Context, query *OtelQuery)
-	QueryAfter(ctx context.Context, query *OtelQuery, response *http.Response)
-	WriteBefore(ctx context.Context, write *OtelWrite)
-	WriteAfter(ctx context.Context, write *OtelWrite, response *http.Response)
+	Query(ctx context.Context, query *InterceptorQuery) InterceptorClosure
+	Write(ctx context.Context, write *InterceptorWrite) InterceptorClosure
 }
 
 // Client represents a openGemini client.

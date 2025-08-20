@@ -45,14 +45,14 @@ var (
 	tracer = otel.Tracer(TraceName)
 )
 
-type OtelQuery struct {
+type InterceptorQuery struct {
 	*Query
 	Ctx     context.Context
 	Span    trace.Span
 	Carrier propagation.TextMapCarrier
 }
 
-type OtelWrite struct {
+type InterceptorWrite struct {
 	Database        string
 	RetentionPolicy string
 	Measurement     string
@@ -70,7 +70,7 @@ func NewOtelInterceptor() Interceptor {
 	return &OtelClient{}
 }
 
-func (o *OtelClient) QueryBefore(ctx context.Context, query *OtelQuery) {
+func (o *OtelClient) Query(ctx context.Context, query *InterceptorQuery) InterceptorClosure {
 	ctx = otel.GetTextMapPropagator().Extract(ctx, query.Carrier)
 	var span trace.Span
 
@@ -87,41 +87,29 @@ func (o *OtelClient) QueryBefore(ctx context.Context, query *OtelQuery) {
 	span.SetAttributes(attribute.String(AttributePrecision, query.Precision.Epoch()))
 	span.SetAttributes(attribute.String(AttributeCommand, query.Command))
 
-	query.Ctx = ctx
-	query.Span = span
-}
-
-func (o *OtelClient) QueryAfter(ctx context.Context, query *OtelQuery, response *http.Response) {
-	if response == nil {
-		if query.Span != nil {
-			query.Span.End()
+	return func(ctx context.Context, response *http.Response) error {
+		defer span.End()
+		if response == nil {
+			fmt.Println("otel interceptor query response body is nil")
+			return nil // when otel makes an error, it does not affect the main business process
 		}
-		return
+
+		var buf bytes.Buffer
+		tee := io.TeeReader(response.Body, &buf)
+		data, err := io.ReadAll(tee)
+		if err != nil {
+			fmt.Println("otel interceptor read query response body failed: " + err.Error())
+			return nil
+		}
+		response.Body = io.NopCloser(&buf)
+
+		span.SetAttributes(attribute.Int(AttributeResponseStatusCode, response.StatusCode))
+		span.SetAttributes(attribute.String(AttributeResponseBody, string(data)))
+		return nil
 	}
-
-	var span trace.Span
-	if query.Span != nil {
-		span = query.Span
-	} else {
-		ctx = otel.GetTextMapPropagator().Extract(ctx, query.Carrier)
-		_, span = tracer.Start(ctx, SpanNameQuery)
-	}
-
-	defer span.End()
-
-	var buf bytes.Buffer
-	tee := io.TeeReader(response.Body, &buf)
-	data, err := io.ReadAll(tee)
-	if err != nil {
-		fmt.Println("otel interceptor read query response body failed", err)
-	}
-	response.Body = io.NopCloser(&buf)
-
-	span.SetAttributes(attribute.Int(AttributeResponseStatusCode, response.StatusCode))
-	span.SetAttributes(attribute.String(AttributeResponseBody, string(data)))
 }
 
-func (o *OtelClient) WriteBefore(ctx context.Context, write *OtelWrite) {
+func (o *OtelClient) Write(ctx context.Context, write *InterceptorWrite) InterceptorClosure {
 	ctx = otel.GetTextMapPropagator().Extract(ctx, write.Carrier)
 	var span trace.Span
 
@@ -137,27 +125,14 @@ func (o *OtelClient) WriteBefore(ctx context.Context, write *OtelWrite) {
 	span.SetAttributes(attribute.String(AttributeRetentionPolicy, write.RetentionPolicy))
 	span.SetAttributes(attribute.String(AttributePrecision, write.Precision))
 	span.SetAttributes(attribute.String(AttributeWriteLineProtocol, write.LineProtocol))
-	write.Ctx = ctx
-	write.Span = span
-}
 
-func (o *OtelClient) WriteAfter(ctx context.Context, write *OtelWrite, response *http.Response) {
-	if response == nil {
-		if write.Span != nil {
-			write.Span.End()
+	return func(ctx context.Context, response *http.Response) error {
+		defer span.End()
+		if response == nil {
+			fmt.Println("otel interceptor write response body is nil")
+			return nil
 		}
-		return
+		span.SetAttributes(attribute.Int(AttributeResponseStatusCode, response.StatusCode))
+		return nil
 	}
-
-	var span trace.Span
-	if write.Span != nil {
-		span = write.Span
-	} else {
-		ctx = otel.GetTextMapPropagator().Extract(ctx, write.Carrier)
-		_, span = tracer.Start(ctx, SpanNameWrite)
-	}
-
-	defer span.End()
-
-	span.SetAttributes(attribute.Int(AttributeResponseStatusCode, response.StatusCode))
 }
