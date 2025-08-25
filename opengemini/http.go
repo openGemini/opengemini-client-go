@@ -29,6 +29,36 @@ type requestDetails struct {
 	body        io.Reader
 }
 
+func (req *requestDetails) toQuery() *InterceptorQuery {
+	if req.queryValues == nil {
+		return &InterceptorQuery{}
+	}
+	return &InterceptorQuery{
+		Query: &Query{
+			Database:        req.queryValues.Get("db"),
+			Command:         req.queryValues.Get("q"),
+			RetentionPolicy: req.queryValues.Get("rp"),
+			Precision:       ToPrecision(req.queryValues.Get("epoch")),
+		},
+	}
+}
+
+func (req *requestDetails) toWrite() *InterceptorWrite {
+	if req.queryValues == nil {
+		return &InterceptorWrite{}
+	}
+	body, err := io.ReadAll(req.body)
+	if err != nil {
+		return &InterceptorWrite{}
+	}
+	return &InterceptorWrite{
+		Database:        req.queryValues.Get("db"),
+		RetentionPolicy: req.queryValues.Get("rp"),
+		LineProtocol:    string(body),
+		Precision:       req.queryValues.Get("epoch"),
+	}
+}
+
 func (c *client) updateAuthHeader(method, urlPath string, header http.Header) http.Header {
 	if c.config.AuthConfig == nil {
 		return header
@@ -122,5 +152,30 @@ func (c *client) executeHttpRequestInner(ctx context.Context, method, serverUrl,
 		}
 	}
 
-	return c.cli.Do(request)
+	var closures []InterceptorClosure
+	for _, interceptor := range c.interceptors {
+		var closure InterceptorClosure
+		switch urlPath {
+		case UrlWrite:
+			var data = details.toWrite()
+			closure = interceptor.Write(ctx, data)
+		default:
+			var data = details.toQuery()
+			closure = interceptor.Query(ctx, data)
+		}
+		closures = append(closures, closure)
+	}
+
+	response, err := c.cli.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, fn := range closures {
+		if err := fn(ctx, response); err != nil {
+			return nil, err
+		}
+	}
+
+	return response, nil
 }
