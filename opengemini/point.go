@@ -127,19 +127,7 @@ type Point struct {
 	// Tags is the line protocol tag field definition.
 	Tags map[string]string
 	// Fields is the line protocol value field definition.
-	Fields  map[string]interface{}
-	Name    string
-	Time    time.Time
-	Command string
-}
-
-type OtelPoint struct {
-	*Point
-	Database        string
-	RetentionPolicy string
-	Precision       string
-	Measurement     string
-	BatchCount      int
+	Fields map[string]interface{}
 }
 
 func (p *Point) AddTag(key string, value string) {
