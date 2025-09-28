@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang/snappy"
+	"github.com/klauspost/compress/snappy"
 	"github.com/vmihailenco/msgpack/v5"
 
 	compressionPool "github.com/openGemini/opengemini-client-go/lib/pool"
