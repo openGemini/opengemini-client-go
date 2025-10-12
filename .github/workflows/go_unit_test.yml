@@ -32,5 +32,11 @@ jobs:
           go-version-file: "go.mod"
       - name: setup OpenGemini
         uses: hezhangjian/setup-opengemini-action@main
+      - name: setup ts-trace
+        run: go install github.com/openGemini/observability/trace/cmd/ts-trace@latest && ts-trace &
       - name: Run coverage
-        run: go test ./... -coverpkg=./opengemini/... -race -coverprofile=coverage.out -covermode=atomic
+        run: |
+          # Run tests for main project
+          go test ./... -coverpkg=./opengemini/... -race -coverprofile=coverage.out -covermode=atomic
+          # Run tests for all subdirectories in tests/
+          go test -C ./tests/trace

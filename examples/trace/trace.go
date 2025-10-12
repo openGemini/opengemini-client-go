@@ -1,4 +1,4 @@
-// Copyright 2024 openGemini Authors
+// Copyright 2025 openGemini Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,12 +20,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/libgox/unicodex/letter"
 	"github.com/openGemini/opengemini-client-go/opengemini"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
@@ -76,18 +78,30 @@ func newPropagator() propagation.TextMapPropagator {
 }
 
 func newTracerProvider() (*sdktrace.TracerProvider, error) {
-	// test: export to jaeger
-	traceExporter, err := otlptracehttp.New(context.Background(),
+	var ctx = context.Background()
+
+	// for example: export to jaeger
+	jaegerExporter, err := otlptracehttp.New(ctx,
 		otlptracehttp.WithEndpoint("127.0.0.1:4318"),
 		otlptracehttp.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
 
+	// for example: export to ts-trace
+	exporter, err := otlptracegrpc.New(ctx,
+		otlptracegrpc.WithEndpoint("127.0.0.1:18086"),
+		otlptracegrpc.WithInsecure())
+	if err != nil {
+		return nil, err
+	}
+
 	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithResource(resource.NewWithAttributes("", semconv.ServiceName("opengemini-client-go"))),
-		sdktrace.WithBatcher(traceExporter,
+		sdktrace.WithBatcher(jaegerExporter,
 			// Default is 5s. Set to 1s for demonstrative purposes.
+			sdktrace.WithBatchTimeout(time.Second)),
+		sdktrace.WithBatcher(exporter,
 			sdktrace.WithBatchTimeout(time.Second)),
 	)
 	return tracerProvider, nil
@@ -120,8 +134,28 @@ func main() {
 	// set otel interceptor
 	client.Interceptors(opengemini.NewOtelInterceptor())
 
-	err = client.CreateDatabase("db0")
+	databaseName := letter.RandEnglish(8)
+	err = client.CreateDatabase(databaseName)
 	if err != nil {
-		// do something
+		fmt.Println(err)
+		panic(err)
 	}
+	time.Sleep(time.Second * 3)
+	point := &opengemini.Point{
+		Measurement: "test_write",
+		Precision:   opengemini.PrecisionNanosecond,
+		Timestamp:   time.Now().UnixNano(),
+		Tags: map[string]string{
+			"foo": "bar",
+		},
+		Fields: map[string]interface{}{
+			"v1": 1,
+		},
+	}
+	err = client.WritePoint(databaseName, point, opengemini.CallbackDummy)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+	fmt.Println("write point success")
 }

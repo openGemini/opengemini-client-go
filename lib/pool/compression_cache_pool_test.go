@@ -20,7 +20,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/golang/snappy"
+	"github.com/klauspost/compress/snappy"
 	"github.com/klauspost/compress/zstd"
 )
 
