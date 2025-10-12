@@ -15,9 +15,14 @@
 package opengemini
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
+	"net/http"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -59,4 +64,83 @@ type InterceptorWrite struct {
 }
 
 type OtelClient struct {
+}
+
+func NewOtelInterceptor() Interceptor {
+	return &OtelClient{}
+}
+
+func (o *OtelClient) Query(ctx context.Context, query *InterceptorQuery) InterceptorClosure {
+	if query.Carrier != nil {
+		ctx = otel.GetTextMapPropagator().Extract(ctx, query.Carrier)
+	}
+	var span trace.Span
+
+	if query.Span != nil {
+		span = query.Span
+	} else {
+		ctx, span = tracer.Start(ctx, SpanNameQuery)
+	}
+
+	if query.Carrier != nil {
+		otel.GetTextMapPropagator().Inject(ctx, query.Carrier)
+	}
+
+	span.SetAttributes(attribute.String(AttributeDatabase, query.Database))
+	span.SetAttributes(attribute.String(AttributeRetentionPolicy, query.RetentionPolicy))
+	span.SetAttributes(attribute.String(AttributePrecision, query.Precision.Epoch()))
+	span.SetAttributes(attribute.String(AttributeCommand, query.Command))
+
+	return func(ctx context.Context, response *http.Response) error {
+		defer span.End()
+		if response == nil {
+			fmt.Println("otel interceptor query response body is nil")
+			return nil // when otel makes an error, it does not affect the main business process
+		}
+
+		var buf bytes.Buffer
+		tee := io.TeeReader(response.Body, &buf)
+		data, err := io.ReadAll(tee)
+		if err != nil {
+			fmt.Println("otel interceptor read query response body failed: " + err.Error())
+			return nil
+		}
+		response.Body = io.NopCloser(&buf)
+
+		span.SetAttributes(attribute.Int(AttributeResponseStatusCode, response.StatusCode))
+		span.SetAttributes(attribute.String(AttributeResponseBody, string(data)))
+		return nil
+	}
+}
+
+func (o *OtelClient) Write(ctx context.Context, write *InterceptorWrite) InterceptorClosure {
+	if write.Carrier != nil {
+		ctx = otel.GetTextMapPropagator().Extract(ctx, write.Carrier)
+	}
+	var span trace.Span
+
+	if write.Span != nil {
+		span = write.Span
+	} else {
+		ctx, span = tracer.Start(ctx, SpanNameWrite)
+	}
+
+	if write.Carrier != nil {
+		otel.GetTextMapPropagator().Inject(ctx, write.Carrier)
+	}
+
+	span.SetAttributes(attribute.String(AttributeDatabase, write.Database))
+	span.SetAttributes(attribute.String(AttributeRetentionPolicy, write.RetentionPolicy))
+	span.SetAttributes(attribute.String(AttributePrecision, write.Precision))
+	span.SetAttributes(attribute.String(AttributeWriteLineProtocol, write.LineProtocol))
+
+	return func(ctx context.Context, response *http.Response) error {
+		defer span.End()
+		if response == nil {
+			fmt.Println("otel interceptor write response body is nil")
+			return nil
+		}
+		span.SetAttributes(attribute.Int(AttributeResponseStatusCode, response.StatusCode))
+		return nil
+	}
 }
