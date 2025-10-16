@@ -99,7 +99,6 @@ func TestIsInsertKeyword(t *testing.T) {
 	assert.False(t, isInsertKeyword("UNKNOWN"))
 }
 
-// todo
 func TestCleanCommand(t *testing.T) {
 	tests := []struct {
 		name     string
