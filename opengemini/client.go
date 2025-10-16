@@ -65,6 +65,12 @@ type Client interface {
 	Ping(idx int) error
 	Query(query Query) (*QueryResult, error)
 
+	// Execute executes a SQL-like statement with automatic routing to appropriate methods
+	// Supports INSERT (routed to Write methods), SELECT/SHOW/CREATE/DROP (routed to Query method)
+	Execute(statement Statement) (*ExecuteResult, error)
+	// ExecuteContext executes a SQL-like statement with context and automatic routing
+	ExecuteContext(ctx context.Context, statement Statement) (*ExecuteResult, error)
+
 	// WritePoint write single point to assigned database. If you don't want to implement callbackFunc to receive error
 	// in writing, you could use opengemini.CallbackDummy.
 	WritePoint(database string, point *Point, callbackFunc WriteCallback) error
