@@ -54,6 +54,12 @@ func (f *Field) String() string {
 
 type Schemas []Field
 
+func (sh Schemas) Len() int { return len(sh) }
+
+func (sh Schemas) Swap(i, j int) { sh[i], sh[j] = sh[j], sh[i] }
+
+func (sh Schemas) Less(i, j int) bool { return sh[i].Name < sh[j].Name }
+
 func (sh *Schemas) String() string {
 	sb := strings.Builder{}
 	for _, f := range *sh {

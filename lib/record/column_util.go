@@ -15,6 +15,7 @@
 package record
 
 import (
+	"fmt"
 	"unsafe"
 )
 
@@ -225,4 +226,117 @@ func (cv *ColVal) Marshal(buf []byte) ([]byte, error) {
 	buf = AppendBytes(buf, cv.Bitmap)
 	buf = AppendUint32Slice(buf, cv.Offset)
 	return buf, nil
+}
+
+func resize(dst []ColVal, segs int) []ColVal {
+	if cap(dst) < segs {
+		delta := segs - cap(dst)
+		dst = dst[:cap(dst)]
+		dst = append(dst, make([]ColVal, delta)...)
+	}
+	dst = dst[:segs]
+	return dst
+}
+
+func (cv *ColVal) Split(dst []ColVal, maxRows int, refType int) []ColVal {
+	if maxRows <= 0 {
+		panic(fmt.Sprintf("maxRows is %v, must grater than 0", maxRows))
+	}
+	segs := (cv.Len + maxRows - 1) / maxRows
+	dst = resize(dst, segs)
+
+	start, offset, validCount := 0, 0, 0
+	for i := 0; i < segs; i++ {
+		end := start + maxRows
+		if end > cv.Len {
+			end = cv.Len
+		}
+		offset, validCount = dst[i].sliceValAndOffset(cv, start, end, refType, offset)
+		dst[i].sliceBitMap(cv, start, end)
+		dst[i].Len = end - start
+		dst[i].NilCount = dst[i].Len - validCount
+		start = end
+	}
+
+	return dst
+}
+
+func (cv *ColVal) Length() int {
+	return cv.Len
+}
+
+func (cv *ColVal) ValidCount(start, end int) int {
+	validCount := 0
+	if cv.Length()+cv.NilCount == 0 || cv.Len == cv.NilCount {
+		return validCount
+	}
+	if cv.NilCount == 0 {
+		return end - start
+	}
+
+	end += cv.BitMapOffset
+	start += cv.BitMapOffset
+	for i := start; i < end; i++ {
+		if cv.Bitmap[i>>3]&BitMask[i&0x07] != 0 {
+			validCount++
+		}
+	}
+	return validCount
+}
+
+func (cv *ColVal) sliceValAndOffset(srcCol *ColVal, start, end, colType, valOffset int) (offset int, valueValidCount int) {
+	var validCount, endOffset int
+	if colType == FieldTypeInt {
+		validCount = srcCol.ValidCount(start, end)
+		endOffset = valOffset + Int64SizeBytes*validCount
+		cv.Val = srcCol.Val[valOffset:endOffset]
+	} else if colType == FieldTypeFloat {
+		validCount = srcCol.ValidCount(start, end)
+		endOffset = valOffset + Float64SizeBytes*validCount
+		cv.Val = srcCol.Val[valOffset:endOffset]
+	} else if colType == FieldTypeString {
+		offsetStart := srcCol.Offset[start]
+		if end == srcCol.Len {
+			endOffset = len(srcCol.Val)
+		} else {
+			endOffset = int(srcCol.Offset[end])
+		}
+		cv.Val = srcCol.Val[offsetStart:endOffset]
+		cv.reserveValOffset(end - start)
+		for index, pos := 0, start; pos < end; pos++ {
+			cv.Offset[index] = srcCol.Offset[pos] - offsetStart
+			index++
+			bitOffset := srcCol.BitMapOffset + pos
+			if srcCol.Bitmap[bitOffset>>3]&BitMask[bitOffset&0x07] != 0 {
+				validCount++
+			}
+		}
+	} else if colType == FieldTypeBoolean {
+		validCount = srcCol.ValidCount(start, end)
+		endOffset = valOffset + BooleanSizeBytes*validCount
+		cv.Val = srcCol.Val[valOffset:endOffset]
+	} else {
+		panic("error type")
+	}
+	return endOffset, validCount
+}
+
+func (cv *ColVal) reserveValOffset(size int) {
+	if cap(cv.Offset) < size {
+		cv.Offset = make([]uint32, size)
+	}
+	cv.Offset = cv.Offset[:size]
+}
+
+func (cv *ColVal) sliceBitMap(srcCol *ColVal, start, end int) {
+	s := srcCol.BitMapOffset + start
+	offset := s % 8
+	s = s / 8
+	e := (srcCol.BitMapOffset + end) / 8
+	if (srcCol.BitMapOffset+end)%8 != 0 {
+		e++
+	}
+
+	cv.Bitmap = srcCol.Bitmap[s:e]
+	cv.BitMapOffset = offset
 }
