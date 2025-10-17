@@ -181,7 +181,6 @@ func (rec *Record) AppendTime(time ...int64) {
 
 func (rec *Record) Marshal(buf []byte) ([]byte, error) {
 	var err error
-	// Schema
 	buf = AppendUint32(buf, uint32(len(rec.Schema)))
 	for i := 0; i < len(rec.Schema); i++ {
 		buf = AppendUint32(buf, uint32(rec.Schema[i].Size()))
@@ -191,7 +190,6 @@ func (rec *Record) Marshal(buf []byte) ([]byte, error) {
 		}
 	}
 
-	// ColVal
 	buf = AppendUint32(buf, uint32(len(rec.ColVals)))
 	for i := 0; i < len(rec.ColVals); i++ {
 		buf = AppendUint32(buf, uint32(rec.ColVals[i].Size()))
@@ -201,4 +199,59 @@ func (rec *Record) Marshal(buf []byte) ([]byte, error) {
 		}
 	}
 	return buf, nil
+}
+
+func (rec *Record) Split(dst []Record, maxRows int) []Record {
+	rows := rec.RowNums()
+	segs := (rows + maxRows - 1) / maxRows
+	if cap(dst) < segs {
+		delta := segs - cap(dst)
+		dst = dst[:cap(dst)]
+		dst = append(dst, make([]Record, delta)...)
+	}
+	dst = dst[:segs]
+
+	if segs == 1 {
+		dst[0] = *rec
+		return dst
+	}
+
+	for i := range dst {
+		dst[i].Schema = append(dst[i].Schema[:0], rec.Schema...)
+		dst[i].ColVals = resize(dst[i].ColVals, rec.Schema.Len())
+	}
+
+	for i := range rec.Schema {
+		col := rec.Column(i)
+		dstCol := col.Split(nil, maxRows, rec.Schema[i].Type)
+		for j := range dstCol {
+			dst[j].ColVals[i] = dstCol[j]
+		}
+	}
+
+	return dst
+}
+
+func (rec *Record) MinTime(isAscending bool) int64 {
+	if isAscending {
+		return rec.firstTime()
+	}
+	return rec.lastTime()
+}
+
+func (rec *Record) MaxTime(isAscending bool) int64 {
+	if isAscending {
+		return rec.lastTime()
+	}
+	return rec.firstTime()
+}
+
+func (rec *Record) firstTime() int64 {
+	timeCol := &rec.ColVals[len(rec.ColVals)-1]
+	return timeCol.IntegerValues()[0]
+}
+
+func (rec *Record) lastTime() int64 {
+	timeCol := &rec.ColVals[len(rec.ColVals)-1]
+	return timeCol.IntegerValues()[timeCol.Len-1]
 }
