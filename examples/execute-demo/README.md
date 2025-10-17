@@ -12,7 +12,7 @@ This document demonstrates the unified Execute interface for OpenGemini Client, 
 The Execute interface is a unified SQL execution interface that automatically routes different types of statements to appropriate underlying methods:
 
 - **Query Statements** (`SELECT`, `SHOW`, `EXPLAIN`, etc.) → Routed to `Query()` method
-- **Command Statements** (`CREATE`, `DROP`, `ALTER`, etc.) → Routed to `Query()` method  
+- **Command Statements** (`CREATE`, `DROP`, `ALTER`, etc.) → Routed to `Query()` method
 - **Insert Statements** (`INSERT`) → Routed to `Write()` methods
 
 ## Features
@@ -70,7 +70,7 @@ result, err := client.Execute(opengemini.Statement{
 if err != nil {
     log.Printf("Failed to create database: %v", err)
 } else {
-    fmt.Printf("Statement type: %s, Affected rows: %d\n", 
+    fmt.Printf("Statement type: %s, Affected rows: %d\n",
         result.StatementType, result.AffectedRows)
 }
 
@@ -116,7 +116,7 @@ result, err := client.Execute(opengemini.Statement{
 if err != nil {
     log.Printf("Parameterized insert failed: %v", err)
 } else {
-    fmt.Printf("Statement type: %s, Affected rows: %d\n", 
+    fmt.Printf("Statement type: %s, Affected rows: %d\n",
         result.StatementType, result.AffectedRows)
 }
 ```

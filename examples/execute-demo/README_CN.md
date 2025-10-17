@@ -12,7 +12,7 @@
 Execute 接口是一个统一的 SQL 执行接口，可以自动将不同类型的语句路由到相应的底层方法：
 
 - **查询语句** (`SELECT`, `SHOW`, `EXPLAIN` 等) → 路由至 `Query()` 方法
-- **命令语句** (`CREATE`, `DROP`, `ALTER` 等) → 路由至 `Query()` 方法  
+- **命令语句** (`CREATE`, `DROP`, `ALTER` 等) → 路由至 `Query()` 方法
 - **插入语句** (`INSERT`) → 路由至 `Write()` 方法
 
 ## 功能特性
@@ -70,7 +70,7 @@ result, err := client.Execute(opengemini.Statement{
 if err != nil {
     log.Printf("创建数据库失败: %v", err)
 } else {
-    fmt.Printf("语句类型: %s, 影响行数: %d\n", 
+    fmt.Printf("语句类型: %s, 影响行数: %d\n",
         result.StatementType, result.AffectedRows)
 }
 
@@ -116,7 +116,7 @@ result, err := client.Execute(opengemini.Statement{
 if err != nil {
     log.Printf("参数化插入失败: %v", err)
 } else {
-    fmt.Printf("语句类型: %s, 影响行数: %d\n", 
+    fmt.Printf("语句类型: %s, 影响行数: %d\n",
         result.StatementType, result.AffectedRows)
 }
 ```
