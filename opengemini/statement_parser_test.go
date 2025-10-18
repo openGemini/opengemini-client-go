@@ -488,3 +488,190 @@ func TestParseInsertStatementComplexCases(t *testing.T) {
 	// Check timestamp
 	assert.Equal(t, int64(1609459200000000000), point.Timestamp)
 }
+
+// TestParseLineProtocolWithEscapeCharacters tests escape character handling
+func TestParseLineProtocolWithEscapeCharacters(t *testing.T) {
+	tests := []struct {
+		name     string
+		lp       string
+		expected *Point
+		hasError bool
+	}{
+		{
+			name: "escaped space in tag value",
+			lp:   `weather,location=San\ Francisco temperature=25.5`,
+			expected: &Point{
+				Measurement: "weather",
+				Tags: map[string]string{
+					"location": "San Francisco",
+				},
+				Fields: map[string]any{
+					"temperature": 25.5,
+				},
+			},
+			hasError: false,
+		},
+		{
+			name: "escaped comma in tag value",
+			lp:   `weather,location=Beijing\,China temperature=25.5`,
+			expected: &Point{
+				Measurement: "weather",
+				Tags: map[string]string{
+					"location": "Beijing,China",
+				},
+				Fields: map[string]any{
+					"temperature": 25.5,
+				},
+			},
+			hasError: false,
+		},
+		{
+			name: "escaped equals in tag value",
+			lp:   `weather,equation=x\=y temperature=25.5`,
+			expected: &Point{
+				Measurement: "weather",
+				Tags: map[string]string{
+					"equation": "x=y",
+				},
+				Fields: map[string]any{
+					"temperature": 25.5,
+				},
+			},
+			hasError: false,
+		},
+		{
+			name: "escaped backslash in tag value",
+			lp:   `weather,path=C:\\Windows temperature=25.5`,
+			expected: &Point{
+				Measurement: "weather",
+				Tags: map[string]string{
+					"path": `C:\Windows`, // \\ becomes \
+				},
+				Fields: map[string]any{
+					"temperature": 25.5,
+				},
+			},
+			hasError: false,
+		},
+		{
+			name: "multiple escaped characters",
+			lp:   `weather,location=San\ Francisco\,CA,tag=value\=test temperature=25.5,humidity=60i`,
+			expected: &Point{
+				Measurement: "weather",
+				Tags: map[string]string{
+					"location": "San Francisco,CA",
+					"tag":      "value=test",
+				},
+				Fields: map[string]any{
+					"temperature": 25.5,
+					"humidity":    int64(60),
+				},
+			},
+			hasError: false,
+		},
+		{
+			name: "escaped space in measurement name",
+			lp:   `my\ measurement temperature=25.5`,
+			expected: &Point{
+				Measurement: "my measurement",
+				Tags:        map[string]string{},
+				Fields: map[string]any{
+					"temperature": 25.5,
+				},
+			},
+			hasError: false,
+		},
+		{
+			name: "complex case with escaped characters",
+			lp:   `weather,location=New\ York\,NY,sensor=sensor\ 001 temperature=25.5,status="partly cloudy",count=100i`,
+			expected: &Point{
+				Measurement: "weather",
+				Tags: map[string]string{
+					"location": "New York,NY",
+					"sensor":   "sensor 001",
+				},
+				Fields: map[string]any{
+					"temperature": 25.5,
+					"status":      "partly cloudy",
+					"count":       int64(100),
+				},
+			},
+			hasError: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := parseLineProtocolToPoint(test.lp)
+			if test.hasError {
+				assert.Error(t, err)
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.Equal(t, test.expected.Measurement, result.Measurement)
+				assert.Equal(t, test.expected.Tags, result.Tags)
+				assert.Equal(t, test.expected.Fields, result.Fields)
+			}
+		})
+	}
+}
+
+// TestParseInsertStatementWithEscapeCharacters tests INSERT statements with escape characters
+func TestParseInsertStatementWithEscapeCharacters(t *testing.T) {
+	tests := []struct {
+		name     string
+		command  string
+		expected *Point
+		hasError bool
+	}{
+		{
+			name:    "INSERT with escaped space",
+			command: `INSERT weather,location=San\ Francisco temperature=25.5`,
+			expected: &Point{
+				Measurement: "weather",
+				Tags: map[string]string{
+					"location": "San Francisco",
+				},
+				Fields: map[string]any{
+					"temperature": 25.5,
+				},
+			},
+			hasError: false,
+		},
+		{
+			name:    "INSERT with multiple escaped characters",
+			command: `INSERT weather,location=Beijing\,China,zone=UTC\+8 temperature=20.0,humidity=65i`,
+			expected: &Point{
+				Measurement: "weather",
+				Tags: map[string]string{
+					"location": "Beijing,China",
+					"zone":     "UTC+8",
+				},
+				Fields: map[string]any{
+					"temperature": 20.0,
+					"humidity":    int64(65),
+				},
+			},
+			hasError: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := parseInsertStatement(test.command)
+			if test.hasError {
+				assert.Error(t, err)
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.Len(t, result, 1)
+				point := result[0]
+				assert.Equal(t, test.expected.Measurement, point.Measurement)
+				assert.Equal(t, test.expected.Tags, point.Tags)
+				assert.Equal(t, test.expected.Fields, point.Fields)
+			}
+		})
+	}
+}

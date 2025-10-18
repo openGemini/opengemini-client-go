@@ -152,72 +152,155 @@ func parseInsertStatement(command string) ([]*Point, error) {
 	return []*Point{point}, nil
 }
 
-// parseLineProtocolToPoint converts line protocol string to Point
+// parseLineProtocolToPoint converts line protocol string to Point with escape character support
 func parseLineProtocolToPoint(lp string) (*Point, error) {
 	// Line Protocol format: measurement[,tag1=val1,tag2=val2] field1=val1[,field2=val2] [timestamp]
 
-	// Separate measurement+tags and fields parts
-	parts := strings.SplitN(lp, " ", 3)
-	if len(parts) < 2 {
-		return nil, errors.New("invalid line protocol format: missing fields")
+	point := &Point{
+		Tags:   make(map[string]string),
+		Fields: make(map[string]any),
 	}
 
-	measurementAndTags := parts[0]
-	fieldsStr := parts[1]
+	// States: 0=measurement, 1=tagKey, 2=tagValue, 3=fieldKey, 4=fieldValue, 5=timestamp
+	state := 0
+	var measurement strings.Builder
+	var currentKey strings.Builder
+	var currentValue strings.Builder
+	escape := false
+	inQuote := false
 
-	// Parse measurement name and tags
-	tagParts := strings.Split(measurementAndTags, ",")
-	measurement := tagParts[0]
+	for i := 0; i < len(lp); i++ {
+		ch := lp[i]
 
-	if measurement == "" {
+		// Handle escape character
+		if ch == '\\' && !escape {
+			escape = true
+			continue
+		}
+
+		// Handle quotes (for field values)
+		if ch == '"' && !escape && (state == 4 || state == 3) {
+			if inQuote {
+				inQuote = false
+			} else {
+				inQuote = true
+			}
+			continue
+		}
+
+		// Handle special characters based on state
+		switch state {
+		case 0: // Parsing measurement
+			if ch == ',' && !escape {
+				point.Measurement = measurement.String()
+				if point.Measurement == "" {
+					return nil, errors.New("measurement name is required")
+				}
+				state = 1 // Move to tag key
+				continue
+			} else if ch == ' ' && !escape {
+				point.Measurement = measurement.String()
+				if point.Measurement == "" {
+					return nil, errors.New("measurement name is required")
+				}
+				state = 3 // Move to field key
+				continue
+			}
+			measurement.WriteByte(ch)
+
+		case 1: // Parsing tag key
+			if ch == '=' && !escape {
+				state = 2 // Move to tag value
+				continue
+			}
+			currentKey.WriteByte(ch)
+
+		case 2: // Parsing tag value
+			if ch == ',' && !escape {
+				// Save current tag and start next tag key
+				point.Tags[currentKey.String()] = currentValue.String()
+				currentKey.Reset()
+				currentValue.Reset()
+				state = 1 // Back to tag key
+				continue
+			} else if ch == ' ' && !escape {
+				// Save last tag and move to fields
+				point.Tags[currentKey.String()] = currentValue.String()
+				currentKey.Reset()
+				currentValue.Reset()
+				state = 3 // Move to field key
+				continue
+			}
+			currentValue.WriteByte(ch)
+
+		case 3: // Parsing field key
+			if ch == '=' && !escape && !inQuote {
+				state = 4 // Move to field value
+				continue
+			}
+			currentKey.WriteByte(ch)
+
+		case 4: // Parsing field value
+			if ch == ',' && !escape && !inQuote {
+				// Save current field and start next field key
+				value, err := parseFieldValue(currentValue.String())
+				if err != nil {
+					return nil, fmt.Errorf("invalid field value for key '%s': %w", currentKey.String(), err)
+				}
+				point.Fields[currentKey.String()] = value
+				currentKey.Reset()
+				currentValue.Reset()
+				state = 3 // Back to field key
+				continue
+			} else if ch == ' ' && !escape && !inQuote {
+				// Save last field and move to timestamp
+				value, err := parseFieldValue(currentValue.String())
+				if err != nil {
+					return nil, fmt.Errorf("invalid field value for key '%s': %w", currentKey.String(), err)
+				}
+				point.Fields[currentKey.String()] = value
+				currentKey.Reset()
+				currentValue.Reset()
+				state = 5 // Move to timestamp
+				continue
+			}
+			currentValue.WriteByte(ch)
+
+		case 5: // Parsing timestamp
+			if ch >= '0' && ch <= '9' {
+				currentValue.WriteByte(ch)
+			} else {
+				// Invalid character in timestamp
+				return nil, fmt.Errorf("invalid timestamp: unexpected character '%c' at position %d", ch, i)
+			}
+		}
+
+		escape = false
+	}
+
+	// Handle remaining data
+	if state == 2 && currentKey.Len() > 0 {
+		point.Tags[currentKey.String()] = currentValue.String()
+	} else if state == 4 && currentKey.Len() > 0 {
+		value, err := parseFieldValue(currentValue.String())
+		if err != nil {
+			return nil, fmt.Errorf("invalid field value for key '%s': %w", currentKey.String(), err)
+		}
+		point.Fields[currentKey.String()] = value
+	} else if state == 5 && currentValue.Len() > 0 {
+		timestamp, err := strconv.ParseInt(currentValue.String(), 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid timestamp: %s", currentValue.String())
+		}
+		point.Timestamp = timestamp
+	}
+
+	// Validate required fields
+	if point.Measurement == "" {
 		return nil, errors.New("measurement name is required")
 	}
-
-	point := &Point{
-		Measurement: measurement,
-		Tags:        make(map[string]string),
-		Fields:      make(map[string]any),
-	}
-
-	// Parse tags (starting from second element)
-	for i := 1; i < len(tagParts); i++ {
-		kv := strings.SplitN(tagParts[i], "=", 2)
-		if len(kv) != 2 {
-			return nil, fmt.Errorf("invalid tag format: %s", tagParts[i])
-		}
-		point.Tags[kv[0]] = kv[1]
-	}
-
-	// Parse fields with type inference
-	fieldParts := strings.Split(fieldsStr, ",")
-	for _, fieldPart := range fieldParts {
-		kv := strings.SplitN(strings.TrimSpace(fieldPart), "=", 2)
-		if len(kv) != 2 {
-			return nil, fmt.Errorf("invalid field format: %s", fieldPart)
-		}
-
-		key := kv[0]
-		valueStr := kv[1]
-
-		// Type inference and conversion
-		value, err := parseFieldValue(valueStr)
-		if err != nil {
-			return nil, fmt.Errorf("invalid field value for key '%s': %w", key, err)
-		}
-
-		point.Fields[key] = value
-	}
-
-	// Parse timestamp (if exists)
-	if len(parts) == 3 {
-		timestampStr := strings.TrimSpace(parts[2])
-		if timestampStr != "" {
-			timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
-			if err != nil {
-				return nil, fmt.Errorf("invalid timestamp: %s", timestampStr)
-			}
-			point.Timestamp = timestamp
-		}
+	if len(point.Fields) == 0 {
+		return nil, errors.New("at least one field is required")
 	}
 
 	return point, nil
