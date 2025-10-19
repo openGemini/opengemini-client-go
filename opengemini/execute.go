@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -150,12 +149,6 @@ func (c *client) routeToWrite(ctx context.Context, stmt Statement, command strin
 		}, err
 	}
 
-	// Debug: log parsed points for troubleshooting
-	log.Println("parsed points count:", len(points))
-	for i, point := range points {
-		log.Printf("point[%d]: measurement=%s, tags=%v, fields=%v", i, point.Measurement, point.Tags, point.Fields)
-	}
-
 	// Call existing write methods
 	if len(points) == 1 {
 		// Single point write
@@ -181,10 +174,10 @@ func (c *client) routeToWrite(ctx context.Context, stmt Statement, command strin
 // validateStatement performs basic validation on the statement
 func validateStatement(statement Statement) error {
 	if statement.Database == "" {
-		return errors.New("database name is required")
+		return ErrEmptyDatabaseName
 	}
 	if statement.Command == "" {
-		return errors.New("command is required")
+		return ErrEmptyCommand
 	}
 	return nil
 }
