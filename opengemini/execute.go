@@ -16,9 +16,7 @@ package opengemini
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strings"
 )
 
 // StatementType represents the category of SQL statement
@@ -84,24 +82,12 @@ func (c *client) ExecuteContext(ctx context.Context, stmt Statement) (*ExecuteRe
 
 	stmtType := parseStatementType(stmt.Command)
 
-	finalCommand := stmt.Command
-	if len(stmt.Params) > 0 {
-		var err error
-		finalCommand, err = replaceParams(stmt.Command, stmt.Params)
-		if err != nil {
-			return &ExecuteResult{
-				StatementType: stmtType,
-				Error:         fmt.Errorf("parameter replacement failed: %w", err),
-			}, err
-		}
-	}
-
 	switch {
 	case stmtType.IsQueryLike():
-		return c.routeToQuery(ctx, stmt, finalCommand, stmtType)
+		return c.routeToQuery(ctx, stmt, stmtType)
 
 	case stmtType.IsWriteLike():
-		return c.routeToWrite(ctx, stmt, finalCommand, stmtType)
+		return c.routeToWrite(ctx, stmt, stmtType)
 
 	default:
 		err := fmt.Errorf("unsupported statement type: %s", stmtType)
@@ -112,11 +98,12 @@ func (c *client) ExecuteContext(ctx context.Context, stmt Statement) (*ExecuteRe
 	}
 }
 
-func (c *client) routeToQuery(ctx context.Context, stmt Statement, finalCommand string, stmtType StatementType) (*ExecuteResult, error) {
+func (c *client) routeToQuery(ctx context.Context, stmt Statement, stmtType StatementType) (*ExecuteResult, error) {
 	query := Query{
 		Database:        stmt.Database,
-		Command:         finalCommand,
+		Command:         stmt.Command,
 		RetentionPolicy: stmt.RetentionPolicy,
+		Params:          stmt.Params,
 	}
 
 	queryResult, err := c.Query(query)
@@ -140,8 +127,8 @@ func (c *client) routeToQuery(ctx context.Context, stmt Statement, finalCommand 
 }
 
 // routeToWrite routes INSERT statements to existing Write methods
-func (c *client) routeToWrite(ctx context.Context, stmt Statement, command string, stmtType StatementType) (*ExecuteResult, error) {
-	points, err := parseInsertStatement(command)
+func (c *client) routeToWrite(ctx context.Context, stmt Statement, stmtType StatementType) (*ExecuteResult, error) {
+	points, err := parseInsertStatement(stmt.Command)
 	if err != nil {
 		return &ExecuteResult{
 			StatementType: stmtType,
@@ -149,15 +136,20 @@ func (c *client) routeToWrite(ctx context.Context, stmt Statement, command strin
 		}, err
 	}
 
-	// Call existing write methods
-	if len(points) == 1 {
-		// Single point write
-		err = c.WritePointWithRp(stmt.Database, stmt.RetentionPolicy, points[0], CallbackDummy)
-	} else {
-		// Batch points write
-		err = c.WriteBatchPointsWithRp(ctx, stmt.Database, stmt.RetentionPolicy, points)
+	// Replace parameters with structured values for each point if params exist
+	if len(stmt.Params) > 0 {
+		for i, point := range points {
+			if err := replacePointParams(point, stmt.Params); err != nil {
+				return &ExecuteResult{
+					StatementType: stmtType,
+					Error:         fmt.Errorf("failed to replace parameters for point %d: %w", i+1, err),
+				}, err
+			}
+		}
 	}
 
+	// Use batch write method (supports both single and multiple points)
+	err = c.WriteBatchPointsWithRp(ctx, stmt.Database, stmt.RetentionPolicy, points)
 	if err != nil {
 		return &ExecuteResult{
 			StatementType: stmtType,
@@ -180,54 +172,4 @@ func validateStatement(statement Statement) error {
 		return ErrEmptyCommand
 	}
 	return nil
-}
-
-// replaceParams safely replaces parameters in the command string
-func replaceParams(command string, params map[string]any) (string, error) {
-	result := command
-
-	for key, value := range params {
-		placeholder := "$" + key
-		if !strings.Contains(result, placeholder) {
-			continue
-		}
-		replacement, err := convertParamValue(value)
-		if err != nil {
-			return "", fmt.Errorf("invalid parameter '%s': %w", key, err)
-		}
-		result = strings.ReplaceAll(result, placeholder, replacement)
-	}
-
-	if strings.Contains(result, "$") {
-		return "", errors.New("unresolved parameters found in command")
-	}
-
-	return result, nil
-}
-
-// convertParamValue converts parameter value to string representation
-func convertParamValue(value any) (string, error) {
-	switch v := value.(type) {
-	case string:
-		return v, nil
-
-	case int, int8, int16, int32, int64:
-		return fmt.Sprintf("%di", v), nil
-
-	case uint, uint8, uint16, uint32, uint64:
-		return fmt.Sprintf("%du", v), nil
-
-	case float32, float64:
-		return fmt.Sprintf("%g", v), nil
-
-	case bool:
-		return fmt.Sprintf("%t", v), nil
-
-	case nil:
-		return "", errors.New("nil value not allowed")
-
-	default:
-		// For other types, try to convert to string
-		return fmt.Sprintf("%v", v), nil
-	}
 }

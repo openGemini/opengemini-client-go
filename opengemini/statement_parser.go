@@ -21,6 +21,16 @@ import (
 	"strings"
 )
 
+// Parser states for line protocol parsing
+const (
+	parseStateMeasurement = iota // Parsing measurement name
+	parseStateTagKey             // Parsing tag key
+	parseStateTagValue           // Parsing tag value
+	parseStateFieldKey           // Parsing field key
+	parseStateFieldValue         // Parsing field value
+	parseStateTimestamp          // Parsing timestamp
+)
+
 // parseStatementType determines the category of SQL statement
 func parseStatementType(command string) StatementType {
 	cleaned := cleanCommand(command)
@@ -133,23 +143,36 @@ func cleanCommand(command string) string {
 
 // parseInsertStatement parses INSERT statement into Point objects
 func parseInsertStatement(command string) ([]*Point, error) {
-	// Remove INSERT prefix from command
 	trimmed := strings.TrimSpace(command)
 	if !strings.HasPrefix(strings.ToUpper(trimmed), "INSERT") {
 		return nil, errors.New("not an INSERT statement")
 	}
 
-	// Extract Line Protocol part after INSERT keyword
-	// Format: INSERT measurement,tag1=value1 field1=value1,field2=value2
-	lpPart := strings.TrimSpace(trimmed[6:]) // Remove "INSERT"
+	// Remove INSERT keyword
+	lpPart := strings.TrimSpace(trimmed[6:])
 
-	// Parse Line Protocol to Point object
-	point, err := parseLineProtocolToPoint(lpPart)
-	if err != nil {
-		return nil, fmt.Errorf("invalid line protocol format: %w", err)
+	// Split by newline to support multiple Line Protocol entries
+	lines := strings.Split(lpPart, "\n")
+	points := make([]*Point, 0, len(lines))
+
+	for i, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue // Skip empty lines
+		}
+
+		point, err := parseLineProtocolToPoint(line)
+		if err != nil {
+			return nil, fmt.Errorf("line %d: %w", i+1, err)
+		}
+		points = append(points, point)
 	}
 
-	return []*Point{point}, nil
+	if len(points) == 0 {
+		return nil, errors.New("no valid data points found in INSERT statement")
+	}
+
+	return points, nil
 }
 
 // parseLineProtocolToPoint converts line protocol string to Point with escape character support
@@ -161,8 +184,7 @@ func parseLineProtocolToPoint(lp string) (*Point, error) {
 		Fields: make(map[string]any),
 	}
 
-	// States: 0=measurement, 1=tagKey, 2=tagValue, 3=fieldKey, 4=fieldValue, 5=timestamp
-	state := 0
+	state := parseStateMeasurement
 	var measurement strings.Builder
 	var currentKey strings.Builder
 	var currentValue strings.Builder
@@ -179,7 +201,7 @@ func parseLineProtocolToPoint(lp string) (*Point, error) {
 		}
 
 		// Handle quotes (for field values)
-		if ch == '"' && !escape && (state == 4 || state == 3) {
+		if ch == '"' && !escape && (state == parseStateFieldValue || state == parseStateFieldKey) {
 			if inQuote {
 				inQuote = false
 			} else {
@@ -190,57 +212,57 @@ func parseLineProtocolToPoint(lp string) (*Point, error) {
 
 		// Handle special characters based on state
 		switch state {
-		case 0: // Parsing measurement
+		case parseStateMeasurement:
 			if ch == ',' && !escape {
 				point.Measurement = measurement.String()
 				if point.Measurement == "" {
 					return nil, errors.New("measurement name is required")
 				}
-				state = 1 // Move to tag key
+				state = parseStateTagKey
 				continue
 			} else if ch == ' ' && !escape {
 				point.Measurement = measurement.String()
 				if point.Measurement == "" {
 					return nil, errors.New("measurement name is required")
 				}
-				state = 3 // Move to field key
+				state = parseStateFieldKey
 				continue
 			}
 			measurement.WriteByte(ch)
 
-		case 1: // Parsing tag key
+		case parseStateTagKey:
 			if ch == '=' && !escape {
-				state = 2 // Move to tag value
+				state = parseStateTagValue
 				continue
 			}
 			currentKey.WriteByte(ch)
 
-		case 2: // Parsing tag value
+		case parseStateTagValue:
 			if ch == ',' && !escape {
 				// Save current tag and start next tag key
 				point.Tags[currentKey.String()] = currentValue.String()
 				currentKey.Reset()
 				currentValue.Reset()
-				state = 1 // Back to tag key
+				state = parseStateTagKey
 				continue
 			} else if ch == ' ' && !escape {
 				// Save last tag and move to fields
 				point.Tags[currentKey.String()] = currentValue.String()
 				currentKey.Reset()
 				currentValue.Reset()
-				state = 3 // Move to field key
+				state = parseStateFieldKey
 				continue
 			}
 			currentValue.WriteByte(ch)
 
-		case 3: // Parsing field key
+		case parseStateFieldKey:
 			if ch == '=' && !escape && !inQuote {
-				state = 4 // Move to field value
+				state = parseStateFieldValue
 				continue
 			}
 			currentKey.WriteByte(ch)
 
-		case 4: // Parsing field value
+		case parseStateFieldValue:
 			if ch == ',' && !escape && !inQuote {
 				// Save current field and start next field key
 				value, err := parseFieldValue(currentValue.String())
@@ -250,7 +272,7 @@ func parseLineProtocolToPoint(lp string) (*Point, error) {
 				point.Fields[currentKey.String()] = value
 				currentKey.Reset()
 				currentValue.Reset()
-				state = 3 // Back to field key
+				state = parseStateFieldKey
 				continue
 			} else if ch == ' ' && !escape && !inQuote {
 				// Save last field and move to timestamp
@@ -261,12 +283,12 @@ func parseLineProtocolToPoint(lp string) (*Point, error) {
 				point.Fields[currentKey.String()] = value
 				currentKey.Reset()
 				currentValue.Reset()
-				state = 5 // Move to timestamp
+				state = parseStateTimestamp
 				continue
 			}
 			currentValue.WriteByte(ch)
 
-		case 5: // Parsing timestamp
+		case parseStateTimestamp:
 			if ch >= '0' && ch <= '9' {
 				currentValue.WriteByte(ch)
 			} else {
@@ -279,15 +301,15 @@ func parseLineProtocolToPoint(lp string) (*Point, error) {
 	}
 
 	// Handle remaining data
-	if state == 2 && currentKey.Len() > 0 {
+	if state == parseStateTagValue && currentKey.Len() > 0 {
 		point.Tags[currentKey.String()] = currentValue.String()
-	} else if state == 4 && currentKey.Len() > 0 {
+	} else if state == parseStateFieldValue && currentKey.Len() > 0 {
 		value, err := parseFieldValue(currentValue.String())
 		if err != nil {
 			return nil, fmt.Errorf("invalid field value for key '%s': %w", currentKey.String(), err)
 		}
 		point.Fields[currentKey.String()] = value
-	} else if state == 5 && currentValue.Len() > 0 {
+	} else if state == parseStateTimestamp && currentValue.Len() > 0 {
 		timestamp, err := strconv.ParseInt(currentValue.String(), 10, 64)
 		if err != nil {
 			return nil, fmt.Errorf("invalid timestamp: %s", currentValue.String())
@@ -346,4 +368,181 @@ func parseFieldValue(valueStr string) (any, error) {
 
 	// If no match found, treat as string (this might cause type conflicts in database)
 	return valueStr, nil
+}
+
+// replacePointParams performs structured parameter replacement on a Point object
+func replacePointParams(point *Point, params map[string]any) error {
+	// 1. Replace placeholders in measurement
+	if strings.Contains(point.Measurement, "$") {
+		replaced, err := replaceStringParam(point.Measurement, params)
+		if err != nil {
+			return fmt.Errorf("measurement: %w", err)
+		}
+		point.Measurement = replaced
+	}
+
+	// 2. Replace placeholders in Tags (both key and value can contain placeholders)
+	newTags := make(map[string]string)
+	for key, value := range point.Tags {
+		newKey := key
+		newValue := value
+
+		// Replace tag key
+		if strings.Contains(key, "$") {
+			replaced, err := replaceStringParam(key, params)
+			if err != nil {
+				return fmt.Errorf("tag key '%s': %w", key, err)
+			}
+			newKey = replaced
+		}
+
+		// Replace tag value
+		if strings.Contains(value, "$") {
+			replaced, err := replaceStringParam(value, params)
+			if err != nil {
+				return fmt.Errorf("tag '%s' value: %w", key, err)
+			}
+			newValue = replaced
+		}
+
+		newTags[newKey] = newValue
+	}
+	point.Tags = newTags
+
+	// 3. Replace placeholders in Fields
+	newFields := make(map[string]interface{})
+	for key, value := range point.Fields {
+		newKey := key
+		newValue := value
+
+		// Replace field key
+		if strings.Contains(key, "$") {
+			replaced, err := replaceStringParam(key, params)
+			if err != nil {
+				return fmt.Errorf("field key '%s': %w", key, err)
+			}
+			newKey = replaced
+		}
+
+		// Replace field value
+		// Check if value is a placeholder string
+		if strValue, ok := value.(string); ok {
+			if strings.HasPrefix(strValue, "$") && isPlaceholder(strValue) {
+				// Entire value is a placeholder, e.g., "$temp"
+				paramName := strings.TrimPrefix(strValue, "$")
+				if paramValue, exists := params[paramName]; exists {
+					newValue = paramValue // Use parameter value directly, preserving type
+				} else {
+					return fmt.Errorf("parameter '$%s' not found", paramName)
+				}
+			} else if strings.Contains(strValue, "$") {
+				// Value contains placeholders, e.g., "prefix_$var_suffix"
+				replaced, err := replaceStringParam(strValue, params)
+				if err != nil {
+					return fmt.Errorf("field '%s' value: %w", key, err)
+				}
+				newValue = replaced
+			}
+		}
+
+		newFields[newKey] = newValue
+	}
+	point.Fields = newFields
+
+	return nil
+}
+
+// replaceStringParam replaces all $paramName placeholders in a string
+func replaceStringParam(input string, params map[string]any) (string, error) {
+	result := input
+
+	// Replace all placeholders
+	for paramName, paramValue := range params {
+		placeholder := "$" + paramName
+		if strings.Contains(result, placeholder) {
+			valueStr := formatParamValueAsString(paramValue)
+			result = strings.ReplaceAll(result, placeholder, valueStr)
+		}
+	}
+
+	// Check if there are any unresolved placeholders
+	if strings.Contains(result, "$") {
+		remaining := extractUnresolvedParams(result)
+		if len(remaining) > 0 {
+			return "", fmt.Errorf("unresolved parameters: %v", remaining)
+		}
+	}
+
+	return result, nil
+}
+
+// formatParamValueAsString converts parameter value to string (for tags/measurement)
+func formatParamValueAsString(value any) string {
+	switch v := value.(type) {
+	case string:
+		return v
+	case int, int8, int16, int32, int64:
+		return fmt.Sprintf("%d", v)
+	case uint, uint8, uint16, uint32, uint64:
+		return fmt.Sprintf("%d", v)
+	case float32, float64:
+		return fmt.Sprintf("%g", v)
+	case bool:
+		return fmt.Sprintf("%t", v)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+// isPlaceholder checks if a string is a single placeholder (e.g., "$temp")
+func isPlaceholder(s string) bool {
+	if !strings.HasPrefix(s, "$") {
+		return false
+	}
+	// Check if all characters after $ are valid parameter name characters
+	paramName := s[1:]
+	if len(paramName) == 0 {
+		return false
+	}
+	for _, ch := range paramName {
+		if !((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+			(ch >= '0' && ch <= '9') || ch == '_') {
+			return false
+		}
+	}
+	return true
+}
+
+// extractUnresolvedParams extracts all unresolved $paramName placeholders from a string
+func extractUnresolvedParams(s string) []string {
+	var unresolved []string
+	parts := strings.Split(s, "$")
+
+	for i := 1; i < len(parts); i++ {
+		paramName := ""
+		for _, ch := range parts[i] {
+			if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+				(ch >= '0' && ch <= '9') || ch == '_' {
+				paramName += string(ch)
+			} else {
+				break
+			}
+		}
+		if paramName != "" {
+			placeholder := "$" + paramName
+			// Avoid duplicate additions
+			found := false
+			for _, existing := range unresolved {
+				if existing == placeholder {
+					found = true
+					break
+				}
+			}
+			if !found {
+				unresolved = append(unresolved, placeholder)
+			}
+		}
+	}
+
+	return unresolved
 }

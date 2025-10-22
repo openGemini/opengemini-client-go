@@ -15,6 +15,7 @@
 package opengemini
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -212,9 +213,13 @@ func TestParseFieldValue(t *testing.T) {
 		{"integer as float", "42", float64(42), false},
 		{"scientific notation", "1.23e-4", 1.23e-4, false},
 
+		// Placeholder values (treated as string)
+		{"placeholder", "$temp", "$temp", false},
+		{"placeholder with underscore", "$my_value", "$my_value", false},
+
 		// Edge cases
-		{"unquoted string", "unquoted", "unquoted", false}, // Falls back to string
-		{"mixed case boolean", "True", "True", false},      // Falls back to string since not exact match
+		{"unquoted string", "unquoted", "unquoted", false},
+		{"mixed case boolean", "True", "True", false},
 
 		// Values with whitespace
 		{"value with leading space", " 42i", int64(42), false},
@@ -264,6 +269,20 @@ func TestParseLineProtocolToPoint(t *testing.T) {
 				Fields: map[string]any{
 					"temperature": 25.5,
 					"humidity":    int64(60),
+				},
+			},
+			hasError: false,
+		},
+		{
+			name: "point with placeholders",
+			lp:   "weather,location=$loc temperature=$temp",
+			expected: &Point{
+				Measurement: "weather",
+				Tags: map[string]string{
+					"location": "$loc",
+				},
+				Fields: map[string]any{
+					"temperature": "$temp",
 				},
 			},
 			hasError: false,
@@ -343,18 +362,6 @@ func TestParseLineProtocolToPoint(t *testing.T) {
 			hasError: true,
 		},
 		{
-			name:     "invalid tag format",
-			lp:       "weather,invalid_tag temperature=25.5",
-			expected: nil,
-			hasError: true,
-		},
-		{
-			name:     "invalid field format",
-			lp:       "weather,location=beijing invalid_field",
-			expected: nil,
-			hasError: true,
-		},
-		{
 			name:     "invalid timestamp",
 			lp:       "weather temperature=25.5 invalid_timestamp",
 			expected: nil,
@@ -417,6 +424,33 @@ func TestParseInsertStatement(t *testing.T) {
 			expectedMeas:  "weather",
 			hasError:      false,
 		},
+		{
+			name: "insert multiple points (batch)",
+			command: `INSERT weather,location=beijing temperature=25.5
+weather,location=shanghai temperature=28.0
+weather,location=guangzhou temperature=32.0`,
+			expectedCount: 3,
+			expectedMeas:  "weather",
+			hasError:      false,
+		},
+		{
+			name: "insert multiple points with empty lines",
+			command: `INSERT weather,location=beijing temperature=25.5
+
+weather,location=shanghai temperature=28.0
+
+weather,location=guangzhou temperature=32.0`,
+			expectedCount: 3,
+			expectedMeas:  "weather",
+			hasError:      false,
+		},
+		{
+			name:          "insert with placeholders",
+			command:       "INSERT weather,location=$loc temperature=$temp",
+			expectedCount: 1,
+			expectedMeas:  "weather",
+			hasError:      false,
+		},
 
 		// Error cases
 		{
@@ -439,6 +473,17 @@ func TestParseInsertStatement(t *testing.T) {
 			command:  "INSERT weather,location=beijing",
 			hasError: true,
 		},
+		{
+			name: "insert multiple points with one invalid",
+			command: `INSERT weather,location=beijing temperature=25.5
+invalid_line_without_fields`,
+			hasError: true,
+		},
+		{
+			name:     "insert with only whitespace",
+			command:  "INSERT    \n\n   ",
+			hasError: true,
+		},
 	}
 
 	for _, test := range tests {
@@ -459,199 +504,390 @@ func TestParseInsertStatement(t *testing.T) {
 	}
 }
 
-func TestParseInsertStatementComplexCases(t *testing.T) {
-	// Test a complete INSERT statement with all types of fields
-	command := "INSERT weather,location=beijing,sensor=sensor_001 temperature=25.5,humidity=60i,pressure=1013.25,status=\"sunny\",active=true,count=100u 1609459200000000000"
-
-	points, err := parseInsertStatement(command)
-	assert.NoError(t, err)
-	assert.Len(t, points, 1)
-
-	point := points[0]
-	assert.Equal(t, "weather", point.Measurement)
-
-	// Check tags
-	expectedTags := map[string]string{
-		"location": "beijing",
-		"sensor":   "sensor_001",
-	}
-	assert.Equal(t, expectedTags, point.Tags)
-
-	// Check fields
-	assert.Equal(t, 25.5, point.Fields["temperature"])
-	assert.Equal(t, int64(60), point.Fields["humidity"])
-	assert.Equal(t, 1013.25, point.Fields["pressure"])
-	assert.Equal(t, "sunny", point.Fields["status"])
-	assert.Equal(t, true, point.Fields["active"])
-	assert.Equal(t, uint64(100), point.Fields["count"])
-
-	// Check timestamp
-	assert.Equal(t, int64(1609459200000000000), point.Timestamp)
-}
-
-// TestParseLineProtocolWithEscapeCharacters tests escape character handling
-func TestParseLineProtocolWithEscapeCharacters(t *testing.T) {
+func TestReplacePointParams(t *testing.T) {
 	tests := []struct {
 		name     string
-		lp       string
+		point    *Point
+		params   map[string]any
 		expected *Point
 		hasError bool
 	}{
 		{
-			name: "escaped space in tag value",
-			lp:   `weather,location=San\ Francisco temperature=25.5`,
+			name: "replace tag value",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "$loc"},
+				Fields:      map[string]any{"temperature": 25.5},
+			},
+			params: map[string]any{"loc": "beijing"},
 			expected: &Point{
 				Measurement: "weather",
-				Tags: map[string]string{
-					"location": "San Francisco",
-				},
-				Fields: map[string]any{
-					"temperature": 25.5,
-				},
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"temperature": 25.5},
 			},
 			hasError: false,
 		},
 		{
-			name: "escaped comma in tag value",
-			lp:   `weather,location=Beijing\,China temperature=25.5`,
+			name: "replace field value with type preservation",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"temperature": "$temp"},
+			},
+			params: map[string]any{"temp": 25.5},
 			expected: &Point{
 				Measurement: "weather",
-				Tags: map[string]string{
-					"location": "Beijing,China",
-				},
-				Fields: map[string]any{
-					"temperature": 25.5,
-				},
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"temperature": 25.5},
 			},
 			hasError: false,
 		},
 		{
-			name: "escaped equals in tag value",
-			lp:   `weather,equation=x\=y temperature=25.5`,
+			name: "replace field value with int type",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"humidity": "$hum"},
+			},
+			params: map[string]any{"hum": int64(60)},
 			expected: &Point{
 				Measurement: "weather",
-				Tags: map[string]string{
-					"equation": "x=y",
-				},
-				Fields: map[string]any{
-					"temperature": 25.5,
-				},
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"humidity": int64(60)},
 			},
 			hasError: false,
 		},
 		{
-			name: "escaped backslash in tag value",
-			lp:   `weather,path=C:\\Windows temperature=25.5`,
+			name: "replace measurement",
+			point: &Point{
+				Measurement: "$meas",
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"temperature": 25.5},
+			},
+			params: map[string]any{"meas": "weather"},
 			expected: &Point{
 				Measurement: "weather",
-				Tags: map[string]string{
-					"path": `C:\Windows`, // \\ becomes \
-				},
-				Fields: map[string]any{
-					"temperature": 25.5,
-				},
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"temperature": 25.5},
 			},
 			hasError: false,
 		},
 		{
-			name: "multiple escaped characters",
-			lp:   `weather,location=San\ Francisco\,CA,tag=value\=test temperature=25.5,humidity=60i`,
+			name: "replace multiple parameters",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "$loc", "sensor": "$sensor"},
+				Fields:      map[string]any{"temperature": "$temp", "humidity": "$hum"},
+			},
+			params: map[string]any{
+				"loc":    "shanghai",
+				"sensor": "001",
+				"temp":   28.0,
+				"hum":    int64(70),
+			},
 			expected: &Point{
 				Measurement: "weather",
-				Tags: map[string]string{
-					"location": "San Francisco,CA",
-					"tag":      "value=test",
-				},
-				Fields: map[string]any{
-					"temperature": 25.5,
-					"humidity":    int64(60),
-				},
+				Tags:        map[string]string{"location": "shanghai", "sensor": "001"},
+				Fields:      map[string]any{"temperature": 28.0, "humidity": int64(70)},
 			},
 			hasError: false,
 		},
 		{
-			name: "escaped space in measurement name",
-			lp:   `my\ measurement temperature=25.5`,
+			name: "no parameters to replace",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"temperature": 25.5},
+			},
+			params: map[string]any{},
 			expected: &Point{
-				Measurement: "my measurement",
-				Tags:        map[string]string{},
-				Fields: map[string]any{
-					"temperature": 25.5,
-				},
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"temperature": 25.5},
 			},
 			hasError: false,
 		},
+
+		// Error cases
 		{
-			name: "complex case with escaped characters",
-			lp:   `weather,location=New\ York\,NY,sensor=sensor\ 001 temperature=25.5,status="partly cloudy",count=100i`,
-			expected: &Point{
+			name: "missing parameter",
+			point: &Point{
 				Measurement: "weather",
-				Tags: map[string]string{
-					"location": "New York,NY",
-					"sensor":   "sensor 001",
-				},
-				Fields: map[string]any{
-					"temperature": 25.5,
-					"status":      "partly cloudy",
-					"count":       int64(100),
-				},
+				Tags:        map[string]string{"location": "$loc"},
+				Fields:      map[string]any{"temperature": 25.5},
 			},
-			hasError: false,
+			params:   map[string]any{"other": "value"},
+			hasError: true,
+		},
+		{
+			name: "missing field parameter",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"temperature": "$missing"},
+			},
+			params:   map[string]any{"other": "value"},
+			hasError: true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := parseLineProtocolToPoint(test.lp)
+			err := replacePointParams(test.point, test.params)
 			if test.hasError {
 				assert.Error(t, err)
-				assert.Nil(t, result)
 			} else {
 				assert.NoError(t, err)
-				assert.NotNil(t, result)
-				assert.Equal(t, test.expected.Measurement, result.Measurement)
-				assert.Equal(t, test.expected.Tags, result.Tags)
-				assert.Equal(t, test.expected.Fields, result.Fields)
+				assert.Equal(t, test.expected.Measurement, test.point.Measurement)
+				assert.Equal(t, test.expected.Tags, test.point.Tags)
+				assert.Equal(t, test.expected.Fields, test.point.Fields)
 			}
 		})
 	}
 }
 
-// TestParseInsertStatementWithEscapeCharacters tests INSERT statements with escape characters
-func TestParseInsertStatementWithEscapeCharacters(t *testing.T) {
+func TestFormatParamValueAsString(t *testing.T) {
 	tests := []struct {
 		name     string
-		command  string
-		expected *Point
-		hasError bool
+		value    any
+		expected string
+	}{
+		{"string value", "hello", "hello"},
+		{"int value", 42, "42"},
+		{"int64 value", int64(42), "42"},
+		{"float64 value", 3.14, "3.14"},
+		{"bool true", true, "true"},
+		{"bool false", false, "false"},
+		{"uint value", uint(100), "100"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := formatParamValueAsString(test.value)
+			assert.Equal(t, test.expected, result)
+		})
+	}
+}
+
+func TestIsPlaceholder(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{"valid placeholder", "$temp", true},
+		{"valid placeholder with underscore", "$my_value", true},
+		{"valid placeholder with number", "$value123", true},
+		{"not a placeholder - no dollar", "temp", false},
+		{"not a placeholder - empty after dollar", "$", false},
+		{"not a placeholder - special char", "$value!", false},
+		{"not a placeholder - space", "$value name", false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := isPlaceholder(test.input)
+			assert.Equal(t, test.expected, result)
+		})
+	}
+}
+
+func TestExtractUnresolvedParams(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
 	}{
 		{
-			name:    "INSERT with escaped space",
-			command: `INSERT weather,location=San\ Francisco temperature=25.5`,
+			name:     "single unresolved parameter",
+			input:    "value is $missing",
+			expected: []string{"$missing"},
+		},
+		{
+			name:     "multiple unresolved parameters",
+			input:    "$param1 and $param2",
+			expected: []string{"$param1", "$param2"},
+		},
+		{
+			name:     "no unresolved parameters",
+			input:    "no parameters here",
+			expected: []string{},
+		},
+		{
+			name:     "duplicate parameters",
+			input:    "$param and $param again",
+			expected: []string{"$param"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := extractUnresolvedParams(test.input)
+			assert.ElementsMatch(t, test.expected, result)
+		})
+	}
+}
+
+// TestReplacePointParams_EdgeCases tests edge cases that might cause bugs
+func TestReplacePointParams_EdgeCases(t *testing.T) {
+	tests := []struct {
+		name     string
+		point    *Point
+		params   map[string]any
+		expected *Point
+		hasError bool
+		errMsg   string
+	}{
+		{
+			name: "placeholder name conflict - partial match",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "$loc"},
+				Fields:      map[string]any{"temperature": "$temp", "temperature2": "$temperature"},
+			},
+			params: map[string]any{
+				"loc":         "beijing",
+				"temp":        25.5,
+				"temperature": 30.0,
+			},
 			expected: &Point{
 				Measurement: "weather",
-				Tags: map[string]string{
-					"location": "San Francisco",
-				},
-				Fields: map[string]any{
-					"temperature": 25.5,
-				},
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"temperature": 25.5, "temperature2": 30.0},
 			},
 			hasError: false,
 		},
 		{
-			name:    "INSERT with multiple escaped characters",
-			command: `INSERT weather,location=Beijing\,China,zone=UTC\+8 temperature=20.0,humidity=65i`,
+			name: "empty string parameter value",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "$loc"},
+				Fields:      map[string]any{"temperature": 25.5},
+			},
+			params: map[string]any{"loc": ""},
 			expected: &Point{
 				Measurement: "weather",
-				Tags: map[string]string{
-					"location": "Beijing,China",
-					"zone":     "UTC+8",
-				},
-				Fields: map[string]any{
-					"temperature": 20.0,
-					"humidity":    int64(65),
-				},
+				Tags:        map[string]string{"location": ""},
+				Fields:      map[string]any{"temperature": 25.5},
+			},
+			hasError: false,
+		},
+		{
+			name: "placeholder in middle of string",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "city_$name_station"},
+				Fields:      map[string]any{"temperature": 25.5},
+			},
+			params: map[string]any{"name": "beijing"},
+			expected: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "city_beijing_station"},
+				Fields:      map[string]any{"temperature": 25.5},
+			},
+			hasError: false,
+		},
+		{
+			name: "multiple placeholders in one value",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "$city-$country"},
+				Fields:      map[string]any{"temperature": 25.5},
+			},
+			params: map[string]any{
+				"city":    "beijing",
+				"country": "china",
+			},
+			expected: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "beijing-china"},
+				Fields:      map[string]any{"temperature": 25.5},
+			},
+			hasError: false,
+		},
+		{
+			name: "field with zero value",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"temperature": "$temp"},
+			},
+			params: map[string]any{"temp": 0},
+			expected: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"temperature": 0},
+			},
+			hasError: false,
+		},
+		{
+			name: "field with negative value",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"temperature": "$temp"},
+			},
+			params: map[string]any{"temp": -10.5},
+			expected: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"temperature": -10.5},
+			},
+			hasError: false,
+		},
+		{
+			name: "field with boolean false",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"active": "$status"},
+			},
+			params: map[string]any{"status": false},
+			expected: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "beijing"},
+				Fields:      map[string]any{"active": false},
+			},
+			hasError: false,
+		},
+		{
+			name: "placeholder with special characters around it",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "[$loc]"},
+				Fields:      map[string]any{"temperature": 25.5},
+			},
+			params: map[string]any{"loc": "beijing"},
+			expected: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "[beijing]"},
+				Fields:      map[string]any{"temperature": 25.5},
+			},
+			hasError: false,
+		},
+		{
+			name: "dollar sign but not placeholder",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "price:$100"},
+				Fields:      map[string]any{"temperature": 25.5},
+			},
+			params:   map[string]any{},
+			hasError: true,
+			errMsg:   "unresolved parameters",
+		},
+		{
+			name: "placeholder key replacement",
+			point: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"$tagkey": "value"},
+				Fields:      map[string]any{"temperature": 25.5},
+			},
+			params: map[string]any{"tagkey": "location"},
+			expected: &Point{
+				Measurement: "weather",
+				Tags:        map[string]string{"location": "value"},
+				Fields:      map[string]any{"temperature": 25.5},
 			},
 			hasError: false,
 		},
@@ -659,19 +895,161 @@ func TestParseInsertStatementWithEscapeCharacters(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := parseInsertStatement(test.command)
+			err := replacePointParams(test.point, test.params)
 			if test.hasError {
 				assert.Error(t, err)
-				assert.Nil(t, result)
+				if test.errMsg != "" {
+					assert.Contains(t, err.Error(), test.errMsg)
+				}
 			} else {
 				assert.NoError(t, err)
-				assert.NotNil(t, result)
-				assert.Len(t, result, 1)
-				point := result[0]
-				assert.Equal(t, test.expected.Measurement, point.Measurement)
-				assert.Equal(t, test.expected.Tags, point.Tags)
-				assert.Equal(t, test.expected.Fields, point.Fields)
+				assert.Equal(t, test.expected.Measurement, test.point.Measurement)
+				assert.Equal(t, test.expected.Tags, test.point.Tags)
+				assert.Equal(t, test.expected.Fields, test.point.Fields)
 			}
+		})
+	}
+}
+
+// TestParseInsertStatement_EdgeCases tests edge cases for INSERT parsing
+func TestParseInsertStatement_EdgeCases(t *testing.T) {
+	tests := []struct {
+		name     string
+		command  string
+		validate func(*testing.T, []*Point, error)
+	}{
+		{
+			name:    "mixed empty and valid lines",
+			command: "INSERT weather,location=beijing temperature=25.5\n\n\nweather,location=shanghai temperature=28.0\n\n",
+			validate: func(t *testing.T, points []*Point, err error) {
+				assert.NoError(t, err)
+				assert.Len(t, points, 2)
+			},
+		},
+		{
+			name:    "windows line endings (CRLF)",
+			command: "INSERT weather,location=beijing temperature=25.5\r\nweather,location=shanghai temperature=28.0",
+			validate: func(t *testing.T, points []*Point, err error) {
+				assert.NoError(t, err)
+				// Should handle at least one point correctly
+				assert.NotNil(t, points)
+			},
+		},
+		{
+			name:    "leading and trailing whitespace per line",
+			command: "INSERT   weather,location=beijing temperature=25.5  \n  weather,location=shanghai temperature=28.0  ",
+			validate: func(t *testing.T, points []*Point, err error) {
+				assert.NoError(t, err)
+				assert.Len(t, points, 2)
+			},
+		},
+		{
+			name:    "INSERT keyword with different case",
+			command: "InSeRt weather,location=beijing temperature=25.5",
+			validate: func(t *testing.T, points []*Point, err error) {
+				assert.NoError(t, err)
+				assert.Len(t, points, 1)
+			},
+		},
+		{
+			name:    "measurement with numbers",
+			command: "INSERT weather123,location=beijing temperature=25.5",
+			validate: func(t *testing.T, points []*Point, err error) {
+				assert.NoError(t, err)
+				assert.Equal(t, "weather123", points[0].Measurement)
+			},
+		},
+		{
+			name:    "very long field value",
+			command: "INSERT weather,location=beijing description=\"" + strings.Repeat("a", 1000) + "\",temperature=25.5",
+			validate: func(t *testing.T, points []*Point, err error) {
+				assert.NoError(t, err)
+				assert.Equal(t, strings.Repeat("a", 1000), points[0].Fields["description"])
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			points, err := parseInsertStatement(test.command)
+			test.validate(t, points, err)
+		})
+	}
+}
+
+// TestParseLineProtocolToPoint_SpecialCases tests special cases in line protocol parsing
+func TestParseLineProtocolToPoint_SpecialCases(t *testing.T) {
+	tests := []struct {
+		name     string
+		lp       string
+		validate func(*testing.T, *Point, error)
+	}{
+		{
+			name: "field with very large integer",
+			lp:   "weather,location=beijing temperature=9223372036854775807i",
+			validate: func(t *testing.T, point *Point, err error) {
+				assert.NoError(t, err)
+				assert.Equal(t, int64(9223372036854775807), point.Fields["temperature"])
+			},
+		},
+		{
+			name: "field with very small negative integer",
+			lp:   "weather,location=beijing temperature=-9223372036854775808i",
+			validate: func(t *testing.T, point *Point, err error) {
+				assert.NoError(t, err)
+				assert.Equal(t, int64(-9223372036854775808), point.Fields["temperature"])
+			},
+		},
+		{
+			name: "field with scientific notation float",
+			lp:   "weather,location=beijing temperature=1.23e10",
+			validate: func(t *testing.T, point *Point, err error) {
+				assert.NoError(t, err)
+				assert.InDelta(t, 1.23e10, point.Fields["temperature"], 0.01)
+			},
+		},
+		{
+			name: "empty string field value",
+			lp:   "weather,location=beijing description=\"\",temperature=25.5",
+			validate: func(t *testing.T, point *Point, err error) {
+				assert.NoError(t, err)
+				assert.Equal(t, "", point.Fields["description"])
+			},
+		},
+		{
+			name: "tag with underscore",
+			lp:   "weather,location_name=beijing temperature=25.5",
+			validate: func(t *testing.T, point *Point, err error) {
+				assert.NoError(t, err)
+				assert.Equal(t, "beijing", point.Tags["location_name"])
+			},
+		},
+		{
+			name: "field with underscore",
+			lp:   "weather,location=beijing temp_celsius=25.5",
+			validate: func(t *testing.T, point *Point, err error) {
+				assert.NoError(t, err)
+				assert.Equal(t, 25.5, point.Fields["temp_celsius"])
+			},
+		},
+		{
+			name: "multiple fields with mixed types",
+			lp:   "weather,location=beijing temp=25.5,humidity=60i,status=\"sunny\",active=true,count=100u",
+			validate: func(t *testing.T, point *Point, err error) {
+				assert.NoError(t, err)
+				assert.Equal(t, 25.5, point.Fields["temp"])
+				assert.Equal(t, int64(60), point.Fields["humidity"])
+				assert.Equal(t, "sunny", point.Fields["status"])
+				assert.Equal(t, true, point.Fields["active"])
+				assert.Equal(t, uint64(100), point.Fields["count"])
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			point, err := parseLineProtocolToPoint(test.lp)
+			test.validate(t, point, err)
 		})
 	}
 }

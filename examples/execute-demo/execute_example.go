@@ -52,8 +52,8 @@ func main() {
 		fmt.Printf("✅ Statement type: %s, Affected rows: %d\n", result.StatementType, result.AffectedRows)
 	}
 
-	// ===== 2. Insert Data (INSERT type) =====
-	fmt.Println("\n=== 2. Insert Data (without parameters) ===")
+	// ===== 2. Insert Single Point (INSERT type) =====
+	fmt.Println("\n=== 2. Insert Single Point (without parameters) ===")
 	result, err = client.Execute(opengemini.Statement{
 		Database: database,
 		Command:  "INSERT weather,location=beijing,sensor=001 temperature=25.5,humidity=60i",
@@ -64,16 +64,30 @@ func main() {
 		fmt.Printf("✅ Statement type: %s, Affected rows: %d\n", result.StatementType, result.AffectedRows)
 	}
 
-	// ===== 3. Parameterized Insert (INSERT type + Params) =====
-	fmt.Println("\n=== 3. Parameterized Insert ===")
+	// ===== 3. Insert Multiple Points (Batch INSERT) =====
+	fmt.Println("\n=== 3. Insert Multiple Points (Batch) ===")
 	result, err = client.Execute(opengemini.Statement{
 		Database: database,
-		Command:  "INSERT weather,location=$location,sensor=$sensor temperature=$temp,humidity=$hum",
+		Command: `INSERT weather,location=shanghai,sensor=002 temperature=28.0,humidity=65i
+weather,location=guangzhou,sensor=003 temperature=32.5,humidity=80i
+weather,location=shenzhen,sensor=004 temperature=30.0,humidity=75i`,
+	})
+	if err != nil {
+		fmt.Printf("Failed to batch insert: %v\n", err)
+	} else {
+		fmt.Printf("✅ Statement type: %s, Affected rows: %d\n", result.StatementType, result.AffectedRows)
+	}
+
+	// ===== 4. Parameterized Insert (Single Point with Structured Params) =====
+	fmt.Println("\n=== 4. Parameterized Insert (Single Point) ===")
+	result, err = client.Execute(opengemini.Statement{
+		Database: database,
+		Command:  "INSERT weather,location=$location,sensor=$sensor temperature=$temp,humidity=$humi",
 		Params: map[string]any{
-			"location": "shanghai",
-			"sensor":   "002",
-			"temp":     30.2,
-			"hum":      70,
+			"location": "chengdu",
+			"sensor":   "005",
+			"temp":     22.5,
+			"humi":     int64(55), // Using int64, type will be preserved
 		},
 	})
 	if err != nil {
@@ -82,15 +96,34 @@ func main() {
 		fmt.Printf("✅ Statement type: %s, Affected rows: %d\n", result.StatementType, result.AffectedRows)
 	}
 
+	// ===== 5. Parameterized Batch Insert (Multiple Points with Different Params) =====
+	fmt.Println("\n=== 5. Parameterized Batch Insert (Multiple Points) ===")
+	result, err = client.Execute(opengemini.Statement{
+		Database: database,
+		Command: `INSERT weather,location=$loc1,sensor=$sensor1 temperature=$temp1,humidity=$hum1
+weather,location=$loc2,sensor=$sensor2 temperature=$temp2,humidity=$hum2
+weather,location=$loc3,sensor=$sensor3 temperature=$temp3,humidity=$hum3`,
+		Params: map[string]any{
+			"loc1": "hangzhou", "sensor1": "006", "temp1": 26.0, "hum1": 70,
+			"loc2": "nanjing", "sensor2": "007", "temp2": 24.5, "hum2": 68,
+			"loc3": "suzhou", "sensor3": "008", "temp3": 25.0, "hum3": 72,
+		},
+	})
+	if err != nil {
+		fmt.Printf("Parameterized batch insert failed: %v\n", err)
+	} else {
+		fmt.Printf("✅ Statement type: %s, Affected rows: %d\n", result.StatementType, result.AffectedRows)
+	}
+
 	// Wait for data to be flushed to disk
 	fmt.Println("\n⏳ Waiting for data to flush...")
 	time.Sleep(3 * time.Second)
 
-	// ===== 4. Query Data (QUERY type) =====
-	fmt.Println("\n=== 4. Query Data ===")
+	// ===== 6. Query All Data (QUERY type) =====
+	fmt.Println("\n=== 6. Query All Data ===")
 	result, err = client.Execute(opengemini.Statement{
 		Database: database,
-		Command:  "SELECT * FROM weather ORDER BY time DESC LIMIT 5",
+		Command:  "SELECT * FROM weather ORDER BY time DESC LIMIT 10",
 	})
 	if err != nil {
 		fmt.Printf("Failed to query data: %v\n", err)
@@ -104,17 +137,19 @@ func main() {
 				for i, row := range series[0].Values {
 					fmt.Printf("Row %d: %v\n", i+1, row)
 				}
+			} else {
+				fmt.Println("📊 No data found")
 			}
 		}
 	}
 
-	// ===== 5. Parameterized Query (QUERY type + Params) =====
-	fmt.Println("\n=== 5. Parameterized Query ===")
+	// ===== 7. Parameterized Query (Server-side parameter replacement) =====
+	fmt.Println("\n=== 7. Parameterized Query (Server-side) ===")
 	result, err = client.Execute(opengemini.Statement{
 		Database: database,
 		Command:  "SELECT * FROM weather WHERE location=$loc ORDER BY time DESC",
 		Params: map[string]any{
-			"loc": "beijing",
+			"loc": "shanghai",
 		},
 	})
 	if err != nil {
@@ -124,13 +159,19 @@ func main() {
 		if result.QueryResult != nil && len(result.QueryResult.Results) > 0 {
 			series := result.QueryResult.Results[0].Series
 			if len(series) > 0 {
-				fmt.Printf("📊 Beijing data: %d records\n", len(series[0].Values))
+				fmt.Printf("📊 Shanghai data: %d records\n", len(series[0].Values))
+				fmt.Printf("Columns: %v\n", series[0].Columns)
+				for _, row := range series[0].Values {
+					fmt.Printf("  %v\n", row)
+				}
+			} else {
+				fmt.Println("📊 No Shanghai data found")
 			}
 		}
 	}
 
-	// ===== 6. SHOW Statement (QUERY type) =====
-	fmt.Println("\n=== 6. SHOW Statement ===")
+	// ===== 8. SHOW Statement (QUERY type) =====
+	fmt.Println("\n=== 8. SHOW Statement ===")
 	result, err = client.Execute(opengemini.Statement{
 		Database: database,
 		Command:  "SHOW MEASUREMENTS",
@@ -147,8 +188,23 @@ func main() {
 		}
 	}
 
-	// ===== 7. Cleanup: Drop Database (COMMAND type) =====
-	fmt.Println("\n=== 7. Drop Database ===")
+	// ===== 9. Test Error Handling: Missing Parameter =====
+	fmt.Println("\n=== 9. Test Error Handling (Missing Parameter) ===")
+	result, err = client.Execute(opengemini.Statement{
+		Database: database,
+		Command:  "INSERT weather,location=$missing temperature=20.0,humidity=50i",
+		Params: map[string]any{
+			"other": "value", // missing 'missing' parameter
+		},
+	})
+	if err != nil {
+		fmt.Printf("❌ Expected error: %v\n", err)
+	} else {
+		fmt.Printf("⚠️  Should have failed but didn't\n")
+	}
+
+	// ===== 10. Cleanup: Drop Database (COMMAND type) =====
+	fmt.Println("\n=== 10. Drop Database ===")
 	result, err = client.Execute(opengemini.Statement{
 		Database: database,
 		Command:  "DROP DATABASE " + database,
@@ -160,4 +216,11 @@ func main() {
 	}
 
 	fmt.Println("\n🎉 Execute interface demo completed!")
+	fmt.Println("\n📝 Summary:")
+	fmt.Println("  ✅ Single point insert")
+	fmt.Println("  ✅ Batch insert (multiple points)")
+	fmt.Println("  ✅ Parameterized insert (client-side structured replacement)")
+	fmt.Println("  ✅ Parameterized batch insert (different params per point)")
+	fmt.Println("  ✅ Parameterized query (server-side replacement)")
+	fmt.Println("  ✅ Error handling")
 }
