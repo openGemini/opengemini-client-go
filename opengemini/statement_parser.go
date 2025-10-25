@@ -1,4 +1,4 @@
-// Copyright 2024 openGemini Authors
+// Copyright 2025 openGemini Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,41 +57,34 @@ func parseStatementType(command string) StatementType {
 	return StatementTypeUnknown
 }
 
-// isQueryKeyword checks if the keyword indicates a query statement
-func isQueryKeyword(word string) bool {
-	queryKeywords := []string{
-		"SELECT",
-		"SHOW",
-		"EXPLAIN",
-		"DESCRIBE",
-		"DESC",
-		"WITH",
+// Cached keyword maps for O(1) lookup complexity
+var (
+	queryKeywords = map[string]bool{
+		"SELECT":   true,
+		"SHOW":     true,
+		"EXPLAIN":  true,
+		"DESCRIBE": true,
+		"DESC":     true,
+		"WITH":     true,
 	}
 
-	for _, keyword := range queryKeywords {
-		if word == keyword {
-			return true
-		}
+	commandKeywords = map[string]bool{
+		"CREATE": true,
+		"DROP":   true,
+		"ALTER":  true,
+		"UPDATE": true,
+		"DELETE": true,
 	}
-	return false
+)
+
+// isQueryKeyword checks if the keyword indicates a query statement
+func isQueryKeyword(word string) bool {
+	return queryKeywords[word]
 }
 
 // isCommandKeyword checks if the keyword indicates a command statement
 func isCommandKeyword(word string) bool {
-	commandKeywords := []string{
-		"CREATE",
-		"DROP",
-		"ALTER",
-		"UPDATE", // UPDATE RETENTION POLICY
-		"DELETE",
-	}
-
-	for _, keyword := range commandKeywords {
-		if word == keyword {
-			return true
-		}
-	}
-	return false
+	return commandKeywords[word]
 }
 
 // isInsertKeyword checks if the keyword indicates an insert statement
