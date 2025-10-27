@@ -53,6 +53,10 @@ func (c *client) WriteBatchPoints(ctx context.Context, database string, bp []*Po
 	return c.WriteBatchPointsWithRp(ctx, database, "", bp)
 }
 
+func (c *client) WriteLineProtocol(ctx context.Context, database string, lineProtocol string) error {
+	return c.WriteLineProtocolWithRp(ctx, database, "", lineProtocol)
+}
+
 func (c *client) WritePointWithRp(database string, rp string, point *Point, callback WriteCallback) error {
 	if c.config.BatchConfig != nil {
 		select {
@@ -85,6 +89,13 @@ func (c *client) WritePointWithRp(database string, rp string, point *Point, call
 	}
 
 	return c.writeBytesBuffer(c.batchContext, database, rp, buffer)
+}
+
+func (c *client) WriteLineProtocolWithRp(ctx context.Context, database string, rp string, lineProtocol string) error {
+	if len(lineProtocol) == 0 {
+		return nil
+	}
+	return c.writeBytesBuffer(ctx, database, rp, bytes.NewBufferString(lineProtocol))
 }
 
 func (c *client) WriteBatchPointsWithRp(ctx context.Context, database string, rp string, bp []*Point) error {
