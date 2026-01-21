@@ -24,7 +24,8 @@ import (
 type Precision int
 
 const (
-	PrecisionNanosecond Precision = iota
+	PrecisionNone Precision = iota
+	PrecisionNanosecond
 	PrecisionMicrosecond
 	PrecisionMillisecond
 	PrecisionSecond
@@ -49,8 +50,9 @@ func (p Precision) String() string {
 		return "PrecisionHour"
 	case PrecisionRFC3339:
 		return "PrecisionRFC3339"
+	default:
+		return ""
 	}
-	return ""
 }
 
 func (p Precision) Epoch() string {
@@ -69,8 +71,9 @@ func (p Precision) Epoch() string {
 		return "h"
 	case PrecisionRFC3339:
 		return "rfc3339"
+	default:
+		return ""
 	}
-	return ""
 }
 
 func (p Precision) NowUnix() int64 {
@@ -111,7 +114,7 @@ func ToPrecision(epoch string) Precision {
 	case "rfc3339":
 		return PrecisionRFC3339
 	}
-	return PrecisionNanosecond
+	return PrecisionNone
 }
 
 // Point represents a single point in the line protocol format.
