@@ -392,6 +392,173 @@ func TestQueryWithParams(t *testing.T) {
 	assert.EqualValues(t, 1, len(result.Results[0].Series[0].Values))
 }
 
+func TestQueryWithChunk(t *testing.T) {
+	c := testNewClient(t, &Config{
+		Addresses: []Address{{
+			Host: "localhost",
+			Port: 8086,
+		}},
+	})
+
+	// create a test database with rand suffix
+	database := randomDatabaseName()
+	err := c.CreateDatabase(database)
+	assert.Nil(t, err)
+
+	// delete test database before exit test case
+	defer func() {
+		err := c.DropDatabase(database)
+		assert.Nil(t, err)
+	}()
+
+	bp := make([]*Point, 3)
+
+	testMeasurement := randomMeasurement()
+	p1 := &Point{
+		Measurement: testMeasurement,
+		Fields: map[string]any{
+			"v1": 1,
+			"v2": "string 1",
+			"v3": 3.1415926,
+			"v4": true,
+		},
+		Timestamp: time.Now().Add(-time.Second * 10).UnixNano(),
+	}
+	p2 := &Point{
+		Measurement: testMeasurement,
+		Fields: map[string]any{
+			"v1": 2,
+			"v2": "string 2",
+			"v3": 2.0,
+			"v4": false,
+		},
+		Timestamp: time.Now().Add(-time.Second * 5).UnixNano(),
+	}
+	p3 := &Point{
+		Measurement: testMeasurement,
+		Fields: map[string]any{
+			"v1": 3,
+			"v2": "string 3",
+			"v3": 3.0,
+			"v4": true,
+		},
+	}
+
+	bp = append(bp, p1, p2, p3)
+	err = c.WriteBatchPoints(context.Background(), database, bp)
+	assert.Nil(t, err)
+
+	time.Sleep(time.Second * 5)
+
+	q := Query{
+		Database:  database,
+		Command:   fmt.Sprintf("select v1 from %s", testMeasurement),
+		Params:    make(map[string]any),
+		Chunked:   true,
+		ChunkSize: 2,
+	}
+	result, err := c.Query(q)
+	assert.Nil(t, err)
+	valueLen := 0
+	for _, r := range result.Results {
+		for _, s := range r.Series {
+			for range s.Values {
+				valueLen += 1
+			}
+		}
+	}
+	assert.EqualValues(t, 3, valueLen)
+}
+
+func TestQueryWithChunkCallback(t *testing.T) {
+	c := testNewClient(t, &Config{
+		Addresses: []Address{{
+			Host: "localhost",
+			Port: 8086,
+		}},
+	})
+
+	// create a test database with rand suffix
+	database := randomDatabaseName()
+	err := c.CreateDatabase(database)
+	assert.Nil(t, err)
+
+	// delete test database before exit test case
+	defer func() {
+		err := c.DropDatabase(database)
+		assert.Nil(t, err)
+	}()
+
+	bp := make([]*Point, 3)
+
+	testMeasurement := randomMeasurement()
+	p1 := &Point{
+		Measurement: testMeasurement,
+		Fields: map[string]any{
+			"v1": 1,
+			"v2": "string 1",
+			"v3": 3.1415926,
+			"v4": true,
+		},
+		Timestamp: time.Now().Add(-time.Second * 10).UnixNano(),
+	}
+	p2 := &Point{
+		Measurement: testMeasurement,
+		Fields: map[string]any{
+			"v1": 2,
+			"v2": "string 2",
+			"v3": 2.0,
+			"v4": false,
+		},
+		Timestamp: time.Now().Add(-time.Second * 5).UnixNano(),
+	}
+	p3 := &Point{
+		Measurement: testMeasurement,
+		Fields: map[string]any{
+			"v1": 3,
+			"v2": "string 3",
+			"v3": 3.0,
+			"v4": true,
+		},
+	}
+
+	bp = append(bp, p1, p2, p3)
+	err = c.WriteBatchPoints(context.Background(), database, bp)
+	assert.Nil(t, err)
+
+	time.Sleep(time.Second * 5)
+
+	var values SeriesValues
+	var queryErr error
+	q := Query{
+		Database:  database,
+		Command:   fmt.Sprintf("select v1 from %s", testMeasurement),
+		Params:    make(map[string]any),
+		Chunked:   true,
+		ChunkSize: 2,
+		ConsumerChunk: func(result *QueryResult, err error) bool {
+			if err != nil {
+				queryErr = err
+				return false
+			}
+			if result == nil {
+				return false
+			}
+			for _, r := range result.Results {
+				for _, s := range r.Series {
+					for _, v := range s.Values {
+						values = append(values, v)
+					}
+				}
+			}
+			return true
+		},
+	}
+	c.Query(q)
+	assert.Nil(t, queryErr)
+	assert.EqualValues(t, 3, len(values))
+}
+
 // ExampleQuery
 func ExampleQuery() {
 	c, err := newClient(&Config{

@@ -29,6 +29,18 @@ type QueryBuilder struct {
 	limit       int64
 	offset      int64
 	timezone    *time.Location
+	// Chunked tells the server to send back chunked responses. This places
+	// less load on the server by sending back chunks of the response rather
+	// than waiting for the entire response all at once.
+	chunked bool
+	// ChunkSize sets the maximum number of rows that will be returned per
+	// chunk. Chunks are either divided based on their series or if they hit
+	// the chunk size limit.
+	//
+	// Chunked must be set to true for this option to be used.
+	chunkSize int
+	// The consumer to invoke for each received QueryResult
+	consumerChunk func(*QueryResult, error) bool
 }
 
 func CreateQueryBuilder() *QueryBuilder {
@@ -72,6 +84,27 @@ func (q *QueryBuilder) Offset(offset int64) *QueryBuilder {
 
 func (q *QueryBuilder) Timezone(location *time.Location) *QueryBuilder {
 	q.timezone = location
+	return q
+}
+
+func (q *QueryBuilder) Chunk(chunked bool, chunkSize int) *QueryBuilder {
+	q.chunked = chunked
+	q.chunkSize = chunkSize
+	return q
+}
+
+func (q *QueryBuilder) Chunked(chunked bool) *QueryBuilder {
+	q.chunked = chunked
+	return q
+}
+
+func (q *QueryBuilder) ChunkSize(chunkSize int) *QueryBuilder {
+	q.chunkSize = chunkSize
+	return q
+}
+
+func (q *QueryBuilder) ConsumerChunk(consumerChunk func(*QueryResult, error) bool) *QueryBuilder {
+	q.consumerChunk = consumerChunk
 	return q
 }
 
@@ -141,6 +174,9 @@ func (q *QueryBuilder) Build() *Query {
 
 	// Return the final query
 	return &Query{
-		Command: commandBuilder.String(),
+		Command:       commandBuilder.String(),
+		Chunked:       q.chunked,
+		ChunkSize:     q.chunkSize,
+		ConsumerChunk: q.consumerChunk,
 	}
 }
