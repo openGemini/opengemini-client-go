@@ -126,63 +126,7 @@ func (c *client) Query(q Query) (*QueryResult, error) {
 
 	if q.Chunked {
 		// Use chunk query
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				respErr := errors.New("read resp failed, error: " + err.Error())
-				if q.ConsumerChunk != nil {
-					q.ConsumerChunk(nil, respErr)
-				}
-				return nil, respErr
-			}
-			respErr := errors.New("error resp, code: " + resp.Status + " body: " + string(body))
-			if q.ConsumerChunk != nil {
-				q.ConsumerChunk(nil, respErr)
-			}
-			return nil, respErr
-		}
-		contentType := resp.Header.Get("Content-Type")
-		contentEncoding := resp.Header.Get("Content-Encoding")
-
-		decodedReader, err := decodeChunkedBody(resp.Body, contentEncoding)
-		if err != nil {
-			if q.ConsumerChunk != nil {
-				q.ConsumerChunk(nil, err)
-			}
-			return nil, err
-		}
-
-		cr := NewChunkedQueryResponse(decodedReader, contentType)
-
-		var qr QueryResult
-		for {
-			chunk, err := cr.Next()
-			if q.ConsumerChunk == nil {
-				// no consumer callback
-				if err != nil {
-					return nil, err
-				}
-				if chunk == nil {
-					break
-				}
-				qr.Results = append(qr.Results, chunk.Results...)
-				if chunk.hasError() != nil {
-					qr.Error = chunk.Error
-					break
-				}
-			} else {
-				// use consumer callback
-				if continueFlag := q.ConsumerChunk(chunk, err); !continueFlag {
-					break
-				}
-				if chunk == nil && err == nil {
-					// stream exhausted
-					break
-				}
-			}
-		}
-		return &qr, nil
+		return retrieveChunkedQueryResFromResp(resp, q.ConsumerChunk)
 	} else {
 		qr, err := retrieveQueryResFromResp(resp)
 		if err != nil {
@@ -353,6 +297,66 @@ func unmarshalJson(body []byte, qr *QueryResult) error {
 	return nil
 }
 
+func retrieveChunkedQueryResFromResp(resp *http.Response, consumerChunk func(*QueryResult, error) bool) (*QueryResult, error) {
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			respErr := errors.New("read resp failed, error: " + err.Error())
+			if consumerChunk != nil {
+				consumerChunk(nil, respErr)
+			}
+			return nil, respErr
+		}
+		respErr := errors.New("error resp, code: " + resp.Status + " body: " + string(body))
+		if consumerChunk != nil {
+			consumerChunk(nil, respErr)
+		}
+		return nil, respErr
+	}
+	contentType := resp.Header.Get("Content-Type")
+	contentEncoding := resp.Header.Get("Content-Encoding")
+
+	decodedReader, err := decodeChunkedBody(resp.Body, contentEncoding)
+	if err != nil {
+		if consumerChunk != nil {
+			consumerChunk(nil, err)
+		}
+		return nil, err
+	}
+
+	cr := NewChunkedQueryResponse(decodedReader, contentType)
+
+	var qr QueryResult
+	for {
+		chunk, err := cr.Next()
+		if consumerChunk == nil {
+			// no consumer callback
+			if err != nil {
+				return nil, err
+			}
+			if chunk == nil {
+				break
+			}
+			qr.Results = append(qr.Results, chunk.Results...)
+			if chunk.hasError() != nil {
+				qr.Error = chunk.Error
+				break
+			}
+		} else {
+			// use consumer callback
+			if continueFlag := consumerChunk(chunk, err); !continueFlag {
+				break
+			}
+			if chunk == nil && err == nil {
+				// stream exhausted
+				break
+			}
+		}
+	}
+	return &qr, nil
+}
+
 // duplexReader reads responses and writes it to another writer while
 // satisfying the reader interface.
 type duplexReader struct {
@@ -363,7 +367,7 @@ type duplexReader struct {
 func (r *duplexReader) Read(p []byte) (n int, err error) {
 	n, err = r.r.Read(p)
 	if err == nil {
-		r.w.Write(p[:n])
+		_, err = r.w.Write(p[:n])
 	}
 	return n, err
 }
@@ -425,7 +429,10 @@ func (r *ChunkedQueryResponse) Next() (*QueryResult, error) {
 		if err == io.EOF {
 			return nil, nil
 		}
-		io.Copy(io.Discard, r.duplex)
+		_, err = io.Copy(io.Discard, r.duplex)
+		if err != nil {
+			return nil, err
+		}
 		return nil, errors.New(strings.TrimSpace(r.buf.String()))
 	}
 

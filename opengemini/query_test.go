@@ -546,15 +546,14 @@ func TestQueryWithChunkCallback(t *testing.T) {
 			}
 			for _, r := range result.Results {
 				for _, s := range r.Series {
-					for _, v := range s.Values {
-						values = append(values, v)
-					}
+					values = append(values, s.Values...)
 				}
 			}
 			return true
 		},
 	}
-	c.Query(q)
+	_, err = c.Query(q)
+	assert.Nil(t, err)
 	assert.Nil(t, queryErr)
 	assert.EqualValues(t, 3, len(values))
 }
