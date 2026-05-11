@@ -16,6 +16,7 @@ package opengemini
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -342,4 +343,72 @@ func TestWriteWithBatchSize(t *testing.T) {
 			t.Fatalf("Test timed out")
 		}
 	}
+}
+
+func TestWriteLineProtocol(t *testing.T) {
+	c := testDefaultClient(t)
+
+	// create a test database with rand suffix
+	database := randomDatabaseName()
+	err := c.CreateDatabase(database)
+	assert.Nil(t, err)
+
+	// delete test database before exit test case
+	defer func() {
+		err := c.DropDatabase(database)
+		assert.Nil(t, err)
+	}()
+	testMeasurement := randomMeasurement()
+	lineProtocol := testMeasurement + ",tag=tag1 field=0.1 " + fmt.Sprintf("%v", time.Now().UnixNano()) + "\n"
+	err = c.WriteLineProtocol(context.Background(), database, lineProtocol)
+	assert.Nil(t, err)
+
+	time.Sleep(time.Second * 5)
+	// check whether write success
+
+	res, err := c.Query(Query{
+		Database: database,
+		Command:  "select * from " + testMeasurement,
+	})
+	assert.Nil(t, err)
+	t.Logf("%#v", res.Results[0].Series[0].Values)
+}
+
+func TestWriteLineProtocolWithRp(t *testing.T) {
+	c := testDefaultClient(t)
+
+	// create a test database with rand suffix
+	database := randomDatabaseName()
+	err := c.CreateDatabase(database)
+	assert.Nil(t, err)
+	err = c.CreateRetentionPolicy(database, RpConfig{Name: "testRp", Duration: "3d", ShardGroupDuration: "1h", IndexDuration: "7h"}, false)
+	assert.Nil(t, err)
+
+	// delete test database before exit test case
+	defer func() {
+		err := c.DropDatabase(database)
+		assert.Nil(t, err)
+	}()
+	testMeasurement := randomMeasurement()
+	lineProtocol := testMeasurement + ",tag=tag1 field=0.1 " + fmt.Sprintf("%v", time.Now().UnixNano()) + "\n"
+	err = c.WriteLineProtocolWithRp(context.Background(), database, "testRp", lineProtocol)
+	assert.Nil(t, err)
+
+	time.Sleep(time.Second * 5)
+	// check whether write success
+	res, err := c.Query(Query{
+		Database: database,
+		Command:  "select * from " + testMeasurement,
+	})
+	assert.Nil(t, err)
+	assert.Contains(t, res.Results[0].Error, "measurement not found")
+
+	res, err = c.Query(Query{
+		Database:        database,
+		Command:         "select * from " + testMeasurement,
+		RetentionPolicy: "testRp",
+	})
+	assert.Nil(t, err)
+	t.Logf("%#v", res.Results[0].Series[0].Values)
+
 }

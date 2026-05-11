@@ -222,21 +222,21 @@ func (r *recordLineBuilderImpl) AddField(key string, value interface{}) RecordBu
 		r.err = errors.Join(r.err, fmt.Errorf("field name %s invalid: %w", key, ErrInvalidTimeColumn))
 		return r
 	}
-	typ := record.FieldTypeUnknown
+	fieldType := record.FieldTypeUnknown
 	switch value.(type) {
 	case string:
-		typ = record.FieldTypeString
+		fieldType = record.FieldTypeString
 	case float32, float64:
-		typ = record.FieldTypeFloat
+		fieldType = record.FieldTypeFloat
 	case bool:
-		typ = record.FieldTypeBoolean
+		fieldType = record.FieldTypeBoolean
 	case int8, int16, int32, int64, uint8, uint16, uint32, uint64, int:
-		typ = record.FieldTypeInt
+		fieldType = record.FieldTypeInt
 	}
 	r.fields = append(r.fields, &fieldTuple{
 		Field: record.Field{
 			Name: key,
-			Type: typ,
+			Type: fieldType,
 		},
 		value: value,
 	})
